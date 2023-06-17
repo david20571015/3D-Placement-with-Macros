@@ -1,23 +1,23 @@
 CXX=g++
-CXXFLAGS=-std=c++20 -Wall -Wextra -pedantic -O2
+CXXFLAGS=-std=c++11 -Wall -Wextra -pedantic -O2
 INCLUDE=-Iinclude
 
-EXEC := main
+EXEC_PATH := $(addprefix ../,$(EXEC))
 
 SRC := $(wildcard lib/**/*.cpp)
 OBJS := $(SRC:%.cpp=%.o)
 DEPS := $(SRC:%.cpp=%.d)
 
-all: $(EXEC)
+all: $(EXEC_PATH)
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) $(INCLUDE) -c -MMD $< -o $@
 
-$(EXEC): $(OBJS)
+$(EXEC_PATH): *.cpp $(OBJS)
 	$(CXX) $(CXXFLAGS) $(INCLUDE) $^ -o $@
 
 .PHONY: clean
 clean:
-	$(RM) $(OBJS) $(DEPS) $(EXEC)
+	$(RM) $(OBJS) $(DEPS) $(EXEC_PATH)
 
 -include $(DEPS)

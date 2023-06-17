@@ -1,5 +1,7 @@
 all: project
 
+export EXEC ?= cadb0028
+
 .PHONY: project project-clean
 project:
 	$(MAKE) -C src
