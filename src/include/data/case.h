@@ -23,15 +23,13 @@ struct CaseTerminal {
   int cost;
 };
 
-class Case {
- public:
-  friend std::istream& operator>>(std::istream& input, Case& case_);
-
- private:
+struct Case {
   DieInfo top_die_, bottom_die_;
   Size size_;
   CaseTerminal terminal_;
   NetList netlist_;
+
+  friend std::istream& operator>>(std::istream& input, Case& case_);
 };
 
 #endif  // SRC_INCLUDE_DATA_CASE_H_

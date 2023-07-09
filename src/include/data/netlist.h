@@ -14,13 +14,11 @@ struct Net {
   friend std::istream& operator>>(std::istream& input, Net& net);
 };
 
-class NetList {
- public:
-  friend std::istream& operator>>(std::istream& input, NetList& net);
-
- private:
+struct NetList {
   std::unordered_map<std::string, std::string> inst_;
   std::vector<Net> nets_;
+
+  friend std::istream& operator>>(std::istream& input, NetList& net);
 };
 
 #endif  // SRC_INCLUDE_DATA_NETLIST_H_
