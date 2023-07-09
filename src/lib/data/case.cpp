@@ -1,19 +1,21 @@
 #include "data/case.h"
 
+#include <utility>
+
 std::vector<std::string> Case::get_macro_list() const {
   std::vector<std::string> macro_list;
 
-  for (const auto& lib_cell : top_die_.tech.lib_cells) {
+  for (const auto& lib_cell : top_die.tech.lib_cells) {
     if (lib_cell.is_macro) {
       macro_list.push_back(lib_cell.name);
     }
   }
-  
+
   return macro_list;
 }
 
-int Case::get_cell_index(std::string type) const {
-    return top_die_.tech.get_lib_cell_index(type);
+int Case::get_cell_index(const std::string& type) const {
+  return top_die.tech.get_lib_cell_index(type);
 }
 
 std::istream& operator>>(std::istream& input, Case& case_) {
@@ -28,22 +30,22 @@ std::istream& operator>>(std::istream& input, Case& case_) {
   }
 
   input >> dummy;
-  input >> case_.size_.lower_left_x >> case_.size_.lower_left_y >>
-      case_.size_.upper_right_x >> case_.size_.upper_right_y;
+  input >> case_.size.lower_left_x >> case_.size.lower_left_y >>
+      case_.size.upper_right_x >> case_.size.upper_right_y;
 
   input >> dummy;
-  input >> case_.top_die_.max_util;
+  input >> case_.top_die.max_util;
   input >> dummy;
-  input >> case_.bottom_die_.max_util;
+  input >> case_.bottom_die.max_util;
 
   input >> dummy;
-  input >> case_.top_die_.rows.start_x >> case_.top_die_.rows.start_y >>
-      case_.top_die_.rows.row_length >> case_.top_die_.rows.row_height >>
-      case_.top_die_.rows.repeat_count;
+  input >> case_.top_die.rows.start_x >> case_.top_die.rows.start_y >>
+      case_.top_die.rows.row_length >> case_.top_die.rows.row_height >>
+      case_.top_die.rows.repeat_count;
   input >> dummy;
-  input >> case_.bottom_die_.rows.start_x >> case_.bottom_die_.rows.start_y >>
-      case_.bottom_die_.rows.row_length >> case_.bottom_die_.rows.row_height >>
-      case_.bottom_die_.rows.repeat_count;
+  input >> case_.bottom_die.rows.start_x >> case_.bottom_die.rows.start_y >>
+      case_.bottom_die.rows.row_length >> case_.bottom_die.rows.row_height >>
+      case_.bottom_die.rows.repeat_count;
 
   std::string top_tech_name;
   std::string bottom_tech_name;
@@ -52,21 +54,21 @@ std::istream& operator>>(std::istream& input, Case& case_) {
 
   for (auto& tech : techs) {
     if (tech.tech_name == top_tech_name) {
-      case_.top_die_.tech = tech;
+      case_.top_die.tech = tech;
     }
     if (tech.tech_name == bottom_tech_name) {
-      case_.bottom_die_.tech = tech;
+      case_.bottom_die.tech = tech;
     }
   }
 
   input >> dummy;
-  input >> case_.terminal_.size_x >> case_.terminal_.size_y;
+  input >> case_.terminal.size_x >> case_.terminal.size_y;
   input >> dummy;
-  input >> case_.terminal_.spacing;
+  input >> case_.terminal.spacing;
   input >> dummy;
-  input >> case_.terminal_.cost;
+  input >> case_.terminal.cost;
 
-  input >> case_.netlist_;
+  input >> case_.netlist;
 
   return input;
 }

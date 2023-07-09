@@ -28,7 +28,7 @@ std::istream& operator>>(std::istream& input, NetList& net_list) {
   std::string lib_cell_name;
   for (int i = 0; i < instance_count; ++i) {
     input >> dummy >> inst_name >> lib_cell_name;
-    net_list.inst_.emplace(inst_name, lib_cell_name);
+    net_list.inst.emplace(inst_name, lib_cell_name);
   }
 
   int net_count;
@@ -39,7 +39,7 @@ std::istream& operator>>(std::istream& input, NetList& net_list) {
     input >> dummy >> net_name >> num_pins;
     Net net{net_name, num_pins, {}};
     input >> net;
-    net_list.nets_.push_back(std::move(net));
+    net_list.nets.push_back(std::move(net));
   }
 
   return input;

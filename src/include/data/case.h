@@ -24,13 +24,13 @@ struct CaseTerminal {
 };
 
 struct Case {
-  DieInfo top_die_, bottom_die_;
-  Size size_;
-  CaseTerminal terminal_;
-  NetList netlist_;
+  DieInfo top_die, bottom_die;
+  Size size;
+  CaseTerminal terminal;
+  NetList netlist;
 
   std::vector<std::string> get_macro_list() const;
-  int get_cell_index(std::string name) const;
+  int get_cell_index(const std::string& type) const;
 
   friend std::istream& operator>>(std::istream& input, Case& case_);
 };

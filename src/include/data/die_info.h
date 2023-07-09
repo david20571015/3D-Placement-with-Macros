@@ -35,7 +35,7 @@ struct Technology {
   int lib_cell_count;
   std::vector<LibCell> lib_cells;
 
-  int get_lib_cell_index(std::string lib_cell_name) const;
+  int get_lib_cell_index(const std::string& lib_cell_name) const;
 
   friend std::istream& operator>>(std::istream& input, Technology& tech);
 };

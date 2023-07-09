@@ -15,8 +15,8 @@ struct Net {
 };
 
 struct NetList {
-  std::unordered_map<std::string, std::string> inst_;
-  std::vector<Net> nets_;
+  std::unordered_map<std::string, std::string> inst;
+  std::vector<Net> nets;
 
   friend std::istream& operator>>(std::istream& input, NetList& net);
 };
