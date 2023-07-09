@@ -3,6 +3,17 @@
 #include <iostream>
 #include <utility>
 
+
+int Technology::get_lib_cell_index(std::string lib_cell_name) const {
+  for (int i = 0; i < lib_cell_count; ++i) {
+    if (lib_cells[i].name == lib_cell_name) {
+      return i;
+    }
+  }
+
+  return -1;
+}
+
 std::istream& operator>>(std::istream& input, LibCell& lib_cell) {
   char is_macro;
   std::string dummy;

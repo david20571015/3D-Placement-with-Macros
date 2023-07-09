@@ -1,5 +1,21 @@
 #include "data/case.h"
 
+std::vector<std::string> Case::get_macro_list() const {
+  std::vector<std::string> macro_list;
+
+  for (const auto& lib_cell : top_die_.tech.lib_cells) {
+    if (lib_cell.is_macro) {
+      macro_list.push_back(lib_cell.name);
+    }
+  }
+  
+  return macro_list;
+}
+
+int Case::get_cell_index(std::string type) const {
+    return top_die_.tech.get_lib_cell_index(type);
+}
+
 std::istream& operator>>(std::istream& input, Case& case_) {
   std::string dummy;
   int num_tech;
