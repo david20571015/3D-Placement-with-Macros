@@ -40,7 +40,7 @@ class Solver {
   void dump(std::ostream& output);
 
  protected:
-  const Case& case_;
+  Case& case_;
   Solution solution_;
 };
 
