@@ -29,6 +29,9 @@ struct Case {
   CaseTerminal terminal_;
   NetList netlist_;
 
+  std::vector<std::string> get_macro_list() const;
+  int get_cell_index(std::string name) const;
+
   friend std::istream& operator>>(std::istream& input, Case& case_);
 };
 
