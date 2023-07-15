@@ -19,6 +19,73 @@ bool Solver1::check_capacity(int index, int die_cell_index) {
           die_max_util[BOTTOM]);
 }
 
+void Solver1::sort(int top, std::vector<std::string>& macro_C_index) {
+  if(top == TOP){
+    std::sort(macro_C_index.begin(), macro_C_index.end(),
+              [&](std::string a, std::string b) {
+                const std::string a_type = case_.netlist.inst[a];
+                const std::string b_type = case_.netlist.inst[b];
+                const int a_die_cell_index = case_.get_cell_index(a_type);
+                const int b_die_cell_index = case_.get_cell_index(b_type);
+                int a_cell_size_ratio =
+                    case_.get_lib_cell_height(TOP, a_die_cell_index) / case_.get_lib_cell_width(TOP, a_die_cell_index);
+                int b_cell_size_ratio =
+                    case_.get_lib_cell_height(TOP, b_die_cell_index) / case_.get_lib_cell_width(TOP, b_die_cell_index);
+                
+                if(a_cell_size_ratio < 1)
+                  a_cell_size_ratio = 1 / a_cell_size_ratio;
+                if(b_cell_size_ratio < 1)
+                  b_cell_size_ratio = 1 / b_cell_size_ratio;
+
+                return a_cell_size_ratio >= b_cell_size_ratio;
+              });
+  }
+  else{
+    std::sort(macro_C_index.begin(), macro_C_index.end(),
+              [&](std::string a, std::string b) {
+                const std::string a_type = case_.netlist.inst[a];
+                const std::string b_type = case_.netlist.inst[b];
+                const int a_die_cell_index = case_.get_cell_index(a_type);
+                const int b_die_cell_index = case_.get_cell_index(b_type);
+                int a_cell_size_ratio =
+                    case_.get_lib_cell_height(BOTTOM, a_die_cell_index) / case_.get_lib_cell_width(BOTTOM, a_die_cell_index);
+                int b_cell_size_ratio =
+                    case_.get_lib_cell_height(BOTTOM, b_die_cell_index) / case_.get_lib_cell_width(BOTTOM, b_die_cell_index);
+                
+                if(a_cell_size_ratio < 1)
+                  a_cell_size_ratio = 1 / a_cell_size_ratio;
+                if(b_cell_size_ratio < 1)
+                  b_cell_size_ratio = 1 / b_cell_size_ratio;
+
+                return a_cell_size_ratio >= b_cell_size_ratio;
+              });
+  }
+}
+
+void Solver1::decide_what_die(std::vector<std::string>& top_die, std::vector<std::string>& bottom_die, std::vector<std::string>& macro_C_index) {
+  for (auto& inst_name : macro_C_index) {
+    const std::string inst_type = case_.netlist.inst[inst_name];
+    const int die_cell_index = case_.get_cell_index(inst_type);
+
+    const bool alter = (die_max_util[TOP] - die_util[TOP]) >
+                       (die_max_util[BOTTOM] - die_util[BOTTOM]);
+
+    if (alter && check_capacity(TOP, die_cell_index)) {
+      die_util[TOP] +=
+          case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() / die_size;
+      top_die.push_back(inst_name);
+      
+    } else if (!alter && check_capacity(BOTTOM, die_cell_index)) {
+      die_util[BOTTOM] +=
+          case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() / die_size;
+      bottom_die.push_back(inst_name);
+    } else {
+      std::cerr << "Die utilization exceeds maximum utilization" << std::endl;
+      return;
+    }
+  }
+}
+
 void Solver1::solve() {
   die_size = case_.size.upper_right_x * case_.size.upper_right_y;
   die_max_util = {case_.top_die.max_util, case_.bottom_die.max_util};
@@ -37,47 +104,36 @@ void Solver1::solve() {
     }
   }
 
-  // place macros
-  for (auto& inst_name : macro_C_index) {
-    std::string const inst_type = case_.netlist.inst[inst_name];
-    int const die_cell_index = case_.get_cell_index(inst_type);
+  // decide what die each macro should be placed
+  std::vector<std::string> top_die_macros;
+  std::vector<std::string> bottom_die_macros;
+  decide_what_die(top_die_macros, bottom_die_macros, macro_C_index);
 
-    bool const alter = (die_max_util[TOP] - die_util[TOP]) >
-                       (die_max_util[BOTTOM] - die_util[BOTTOM]);
+  // sort by (height / width)
+  sort(TOP, top_die_macros);
+  sort(BOTTOM, bottom_die_macros);
 
-    if (alter && check_capacity(TOP, die_cell_index)) {
-      die_util[TOP] +=
-          case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
-          die_size;
-    } else if (!alter && check_capacity(BOTTOM, die_cell_index)) {
-      die_util[BOTTOM] +=
-          case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
-          die_size;
-    } else {
-      std::cerr << "Die utilization exceeds maximum utilization" << std::endl;
-      exit(1);
+  // place macros on the top die
+  for (auto& inst_name : top_die_macros) {
+    const std::string inst_type = case_.netlist.inst[inst_name];
+    const int die_cell_index = case_.get_cell_index(inst_type);
+
+    int width = case_.get_lib_cell_width(TOP, die_cell_index);
+    int height = case_.get_lib_cell_height(TOP, die_cell_index);
+    int rotate = 0; // 0: no rotate, 1: rotate 90 degree, 2: rotate 180 degree, 3: rotate 270 degree
+
+    if(width > height) {
+      std::swap(width, height);
+      rotate = 1;
     }
+
+    // place
+    
   }
 
-  // place cells
-  for (auto& inst_name : cell_C_index) {
-    std::string const inst_type = case_.netlist.inst[inst_name];
-    int const die_cell_index = case_.get_cell_index(inst_type);
 
-    bool const alter = (die_max_util[TOP] - die_util[TOP]) >
-                       (die_max_util[BOTTOM] - die_util[BOTTOM]);
-
-    if (alter && check_capacity(TOP, die_cell_index)) {
-      die_util[TOP] +=
-          case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
-          die_size;
-    } else if (!alter && check_capacity(BOTTOM, die_cell_index)) {
-      die_util[BOTTOM] +=
-          case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
-          die_size;
-    } else {
-      std::cerr << "Die utilization exceeds maximum utilization" << std::endl;
-      exit(1);
-    }
-  }
+  // decide what die each cell should be placed
+  std::vector<std::string> top_die_cells;
+  std::vector<std::string> bottom_die_cells;
+  decide_what_die(top_die_cells, bottom_die_cells, cell_C_index);
 }
