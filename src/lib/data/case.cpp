@@ -18,6 +18,16 @@ int Case::get_cell_index(const std::string& type) const {
   return top_die.tech.get_lib_cell_index(type);
 }
 
+int Case::get_lib_cell_width(int die_index, int lib_cell_index) const {
+    return (die_index == 0) ? top_die.tech.lib_cells[lib_cell_index].size.x
+                              : bottom_die.tech.lib_cells[lib_cell_index].size.x;
+};
+
+int Case::get_lib_cell_height(int die_index, int lib_cell_index) const {
+    return (die_index == 0) ? top_die.tech.lib_cells[lib_cell_index].size.y
+                              : bottom_die.tech.lib_cells[lib_cell_index].size.y;
+};
+
 std::istream& operator>>(std::istream& input, Case& case_) {
   std::string dummy;
   int num_tech;

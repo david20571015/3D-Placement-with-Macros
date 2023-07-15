@@ -36,6 +36,12 @@ struct Technology {
   std::vector<LibCell> lib_cells;
 
   int get_lib_cell_index(const std::string& lib_cell_name) const;
+  int get_lib_cell_width(int lib_cell_index) const {
+    return lib_cells[lib_cell_index].size.x;
+  };
+  int get_lib_cell_height(int lib_cell_index) const {
+    return lib_cells[lib_cell_index].size.y;
+  };
 
   friend std::istream& operator>>(std::istream& input, Technology& tech);
 };
