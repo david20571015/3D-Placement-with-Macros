@@ -4,8 +4,6 @@
 
 #include "data/case.h"
 
-enum die_index { TOP, BOTTOM };
-
 Solver1::Solver1(Case& case_) : Solver(case_) {}
 
 bool Solver1::check_capacity(int index, int die_cell_index) {
@@ -19,50 +17,34 @@ bool Solver1::check_capacity(int index, int die_cell_index) {
           die_max_util[BOTTOM]);
 }
 
-void Solver1::sort(int top, std::vector<std::string>& macro_C_index) {
-  if(top == TOP){
-    std::sort(macro_C_index.begin(), macro_C_index.end(),
-              [&](std::string a, std::string b) {
-                const std::string a_type = case_.netlist.inst[a];
-                const std::string b_type = case_.netlist.inst[b];
-                const int a_die_cell_index = case_.get_cell_index(a_type);
-                const int b_die_cell_index = case_.get_cell_index(b_type);
-                int a_cell_size_ratio =
-                    case_.get_lib_cell_height(TOP, a_die_cell_index) / case_.get_lib_cell_width(TOP, a_die_cell_index);
-                int b_cell_size_ratio =
-                    case_.get_lib_cell_height(TOP, b_die_cell_index) / case_.get_lib_cell_width(TOP, b_die_cell_index);
-                
-                if(a_cell_size_ratio < 1)
-                  a_cell_size_ratio = 1 / a_cell_size_ratio;
-                if(b_cell_size_ratio < 1)
-                  b_cell_size_ratio = 1 / b_cell_size_ratio;
+void Solver1::sort(DIE_INDEX idx, std::vector<std::string>& macro_C_index) {
+  std::sort(macro_C_index.begin(), macro_C_index.end(),
+            [&](const std::string& a, const std::string& b) {
+              const std::string a_type = case_.netlist.inst[a];
+              const std::string b_type = case_.netlist.inst[b];
+              const int a_die_cell_index = case_.get_cell_index(a_type);
+              const int b_die_cell_index = case_.get_cell_index(b_type);
+              int a_cell_size_ratio =
+                  case_.get_lib_cell_height(idx, a_die_cell_index) /
+                  case_.get_lib_cell_width(idx, a_die_cell_index);
+              int b_cell_size_ratio =
+                  case_.get_lib_cell_height(idx, b_die_cell_index) /
+                  case_.get_lib_cell_width(idx, b_die_cell_index);
 
-                return a_cell_size_ratio >= b_cell_size_ratio;
-              });
-  }
-  else{
-    std::sort(macro_C_index.begin(), macro_C_index.end(),
-              [&](std::string a, std::string b) {
-                const std::string a_type = case_.netlist.inst[a];
-                const std::string b_type = case_.netlist.inst[b];
-                const int a_die_cell_index = case_.get_cell_index(a_type);
-                const int b_die_cell_index = case_.get_cell_index(b_type);
-                int a_cell_size_ratio =
-                    case_.get_lib_cell_height(BOTTOM, a_die_cell_index) / case_.get_lib_cell_width(BOTTOM, a_die_cell_index);
-                int b_cell_size_ratio =
-                    case_.get_lib_cell_height(BOTTOM, b_die_cell_index) / case_.get_lib_cell_width(BOTTOM, b_die_cell_index);
-                
-                if(a_cell_size_ratio < 1)
-                  a_cell_size_ratio = 1 / a_cell_size_ratio;
-                if(b_cell_size_ratio < 1)
-                  b_cell_size_ratio = 1 / b_cell_size_ratio;
+              if (a_cell_size_ratio < 1) {
+                a_cell_size_ratio = 1 / a_cell_size_ratio;
+              }
+              if (b_cell_size_ratio < 1) {
+                b_cell_size_ratio = 1 / b_cell_size_ratio;
+              }
 
-                return a_cell_size_ratio >= b_cell_size_ratio;
-              });
-  }
+              return a_cell_size_ratio >= b_cell_size_ratio;
+            });
 }
 
-void Solver1::decide_what_die(std::vector<std::string>& top_die, std::vector<std::string>& bottom_die, std::vector<std::string>& macro_C_index) {
+void Solver1::decide_what_die(std::vector<std::string>& top_die,
+                              std::vector<std::string>& bottom_die,
+                              std::vector<std::string>& macro_C_index) {
   for (auto& inst_name : macro_C_index) {
     const std::string inst_type = case_.netlist.inst[inst_name];
     const int die_cell_index = case_.get_cell_index(inst_type);
@@ -72,12 +54,13 @@ void Solver1::decide_what_die(std::vector<std::string>& top_die, std::vector<std
 
     if (alter && check_capacity(TOP, die_cell_index)) {
       die_util[TOP] +=
-          case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() / die_size;
+          case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
+          die_size;
       top_die.push_back(inst_name);
-      
     } else if (!alter && check_capacity(BOTTOM, die_cell_index)) {
       die_util[BOTTOM] +=
-          case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() / die_size;
+          case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
+          die_size;
       bottom_die.push_back(inst_name);
     } else {
       std::cerr << "Die utilization exceeds maximum utilization" << std::endl;
@@ -120,17 +103,16 @@ void Solver1::solve() {
 
     int width = case_.get_lib_cell_width(TOP, die_cell_index);
     int height = case_.get_lib_cell_height(TOP, die_cell_index);
-    int rotate = 0; // 0: no rotate, 1: rotate 90 degree, 2: rotate 180 degree, 3: rotate 270 degree
+    int rotate = 0;  // 0: no rotate, 1: rotate 90 degree, 2: rotate 180 degree,
+                     // 3: rotate 270 degree
 
-    if(width > height) {
+    if (width > height) {
       std::swap(width, height);
       rotate = 1;
     }
 
     // place
-    
   }
-
 
   // decide what die each cell should be placed
   std::vector<std::string> top_die_cells;
