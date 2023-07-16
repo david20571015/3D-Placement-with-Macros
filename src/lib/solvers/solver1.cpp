@@ -5,12 +5,25 @@
 #include "data/case.h"
 
 Solver1::Solver1(Case& case_) : Solver(case_) {
+  // initialize horizontal contours for top and bottom die (macros)
   line_segment init;
   init.y = 0;
   init.from = 0;
   init.to = case_.size.upper_right_x;
   horizontal_contours[TOP].push_back(init);
   horizontal_contours[BOTTOM].push_back(init);
+
+  // initialize spared rows for top and bottom die (cells)
+  spared_rows[TOP].resize(case_.top_die.rows.repeat_count);
+  for (int i = 0; i < case_.top_die.rows.repeat_count; ++i) {
+    spared_rows[TOP][i].push_back({0, case_.top_die.rows.row_length});
+  }
+  spared_rows[BOTTOM].resize(case_.bottom_die.rows.repeat_count);
+  for (int i = 0; i < case_.bottom_die.rows.repeat_count; ++i) {
+    spared_rows[BOTTOM][i].push_back({0, case_.bottom_die.rows.row_length});
+  }
+  
+  // initialize die size and utilization
   die_size = case_.size.upper_right_x * case_.size.upper_right_y;
   die_max_util = {case_.top_die.max_util, case_.bottom_die.max_util};
   die_util = {0, 0};
@@ -237,8 +250,13 @@ void Solver1::place_macro_on_die(DIE_INDEX idx, const std::vector<std::string>& 
     int y = 0;
     place_macro(idx, x, y, width, height);
 
+    // update spared rows
+    update_spared_rows(idx, x, y, width, height);
+    
     // update
     case_.netlist.placed[inst_name] = true;
+    
+    // update solution
     Inst inst;
     inst.name = inst_name;
     inst.loc_x = x;
@@ -252,12 +270,53 @@ void Solver1::place_macro_on_die(DIE_INDEX idx, const std::vector<std::string>& 
   }
 }
 
+void Solver1::update_spared_rows(DIE_INDEX idx, const int x, const int y
+                                , const int width, const int height) {
+  std::vector<std::vector<std::pair<int, int>>>& s_rows = spared_rows[idx];
+  int row_height = case_.get_die_row_height(idx);
+  int top_row_index = (y + height) / row_height;
+  int bottom_row_index = y / row_height;
+
+  if ((((y + height) % row_height) == 0) || ((y + height) > row_height * (s_rows.size()))) {
+    top_row_index -= 1;
+  }
+  if (((y % row_height) == 0) && (y != 0)) {
+    bottom_row_index -= 1;
+  }
+
+  int left = x;
+  int right = x + width;
+  for (int i = bottom_row_index; i <= top_row_index; ++i) {
+    int j = 0;
+    while (j < s_rows[i].size() && left > s_rows[i][j].second) {
+      ++j;
+    }
+    if ((left == s_rows[i][j].first) && (right == s_rows[i][j].second)) {
+      s_rows[i].erase(s_rows[i].begin() + j);
+    }
+    else if(left == s_rows[i][j].first) {
+      s_rows[i][j].first = right;
+    }
+    else if(right == s_rows[i][j].second) {
+      s_rows[i][j].second = left;
+    }
+    else {
+      std::pair<int, int> new_pair;
+      new_pair.first = right;
+      new_pair.second = s_rows[i][j].second;
+      s_rows[i].insert(s_rows[i].begin() + j + 1, new_pair);
+      s_rows[i][j].second = left;
+    }
+  }
+}
+
 void Solver1::solve() {
   // separate macros and cells
   std::vector<std::string> macro_C_index;
   std::vector<std::string> cell_C_index;
   separate_macros_cells(case_.get_macro_list(), macro_C_index, cell_C_index);
 
+  // macro
   // decide what die each macro should be placed
   std::vector<std::string> top_die_macros;
   std::vector<std::string> bottom_die_macros;
@@ -271,6 +330,7 @@ void Solver1::solve() {
   place_macro_on_die(TOP, top_die_macros);
   place_macro_on_die(BOTTOM, bottom_die_macros);
 
+  // cell
   // decide what die each cell should be placed
   std::vector<std::string> top_die_cells;
   std::vector<std::string> bottom_die_cells;
