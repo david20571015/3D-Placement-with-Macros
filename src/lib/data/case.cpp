@@ -28,6 +28,10 @@ int Case::get_lib_cell_height(int die_index, int lib_cell_index) const {
                           : bottom_die.tech.lib_cells[lib_cell_index].size.y;
 };
 
+int Case::get_die_row_height(int die_index) const {
+  return (die_index == 0) ? top_die.rows.row_height : bottom_die.rows.row_height;
+}
+
 std::istream& operator>>(std::istream& input, Case& case_) {
   std::string dummy;
   int num_tech;
