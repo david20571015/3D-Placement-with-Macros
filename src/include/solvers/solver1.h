@@ -23,9 +23,9 @@ class Solver1 : public Solver {
                              std::vector<std::string>& cell_C_index);
   bool check_capacity(int index, int die_cell_index);
   void sort_macro(DIE_INDEX idx, std::vector<std::string>& macro_C_index);
-  void decide_what_die(std::vector<std::string>& top_die,
-                       std::vector<std::string>& bottom_die,
-                       std::vector<std::string> inst_C_index);
+  void decide_what_die(std::vector<std::string> inst_C_index,
+                       std::vector<std::string>& top_die,
+                       std::vector<std::string>& bottom_die);
   void place_macro_on_die(DIE_INDEX idx, const std::vector<std::string>& macros);
   void place_macro(DIE_INDEX idx, int& x, int& y, const int width, const int height);
   void concat_line_segment(DIE_INDEX idx, int i);

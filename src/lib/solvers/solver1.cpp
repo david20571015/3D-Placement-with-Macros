@@ -66,9 +66,9 @@ void Solver1::sort_macro(DIE_INDEX idx, std::vector<std::string>& macro_C_index)
             });
 }
 
-void Solver1::decide_what_die(std::vector<std::string>& top_die,
-                              std::vector<std::string>& bottom_die,
-                              std::vector<std::string> inst_C_index) {
+void Solver1::decide_what_die(std::vector<std::string> inst_C_index,
+                              std::vector<std::string>& top_die,
+                              std::vector<std::string>& bottom_die) {
   for (auto& inst_name : inst_C_index) {
     const std::string inst_type = case_.netlist.inst[inst_name];
     const int die_cell_index = case_.get_cell_index(inst_type);
@@ -247,7 +247,7 @@ void Solver1::solve() {
   // decide what die each macro should be placed
   std::vector<std::string> top_die_macros;
   std::vector<std::string> bottom_die_macros;
-  decide_what_die(top_die_macros, bottom_die_macros, macro_C_index);
+  decide_what_die(macro_C_index, top_die_macros, bottom_die_macros);
 
   // sort by (height / width)
   sort_macro(TOP, top_die_macros);
@@ -260,5 +260,5 @@ void Solver1::solve() {
   // decide what die each cell should be placed
   std::vector<std::string> top_die_cells;
   std::vector<std::string> bottom_die_cells;
-  decide_what_die(top_die_cells, bottom_die_cells, cell_C_index);
+  decide_what_die(cell_C_index, top_die_cells, bottom_die_cells);
 }
