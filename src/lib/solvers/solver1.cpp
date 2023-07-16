@@ -66,6 +66,20 @@ void Solver1::sort_macro(DIE_INDEX idx, std::vector<std::string>& macro_C_index)
             });
 }
 
+void Solver1::sort_cell(DIE_INDEX idx, std::vector<std::string>& cell_C_index) {
+  std::sort(cell_C_index.begin(), cell_C_index.end(),
+    [&](const std::string& a, const std::string& b) {
+      const std::string a_type = case_.netlist.inst[a];
+      const std::string b_type = case_.netlist.inst[b];
+      const int a_die_cell_index = case_.get_cell_index(a_type);
+      const int b_die_cell_index = case_.get_cell_index(b_type);
+      int a_cell_size = case_.get_lib_cell_width(idx, a_die_cell_index);
+      int b_cell_size = case_.get_lib_cell_width(idx, b_die_cell_index);
+
+      return a_cell_size >= b_cell_size;
+    });
+}
+
 void Solver1::decide_what_die(std::vector<std::string> inst_C_index,
                               std::vector<std::string>& top_die,
                               std::vector<std::string>& bottom_die) {
@@ -261,4 +275,8 @@ void Solver1::solve() {
   std::vector<std::string> top_die_cells;
   std::vector<std::string> bottom_die_cells;
   decide_what_die(cell_C_index, top_die_cells, bottom_die_cells);
+
+  // sort by width
+  sort_cell(TOP, top_die_cells);
+  sort_cell(BOTTOM, bottom_die_cells);
 }

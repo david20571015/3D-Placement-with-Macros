@@ -29,4 +29,5 @@ class Solver1 : public Solver {
   void place_macro_on_die(DIE_INDEX idx, const std::vector<std::string>& macros);
   void place_macro(DIE_INDEX idx, int& x, int& y, const int width, const int height);
   void concat_line_segment(DIE_INDEX idx, int i);
+  void sort_cell(DIE_INDEX idx, std::vector<std::string>& cell_C_index);
 };
