@@ -11,7 +11,8 @@ struct Inst {
   std::string name;
   int loc_x;
   int loc_y;
-  enum { R0, R90, R180, R270 } orientation;
+  enum rotate { R0, R90, R180, R270 };
+  rotate orientation = R0;
 
   friend std::ostream& operator<<(std::ostream& output, Inst& inst);
 };
