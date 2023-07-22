@@ -161,11 +161,12 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
         x = contour.from;
         y = contour.y;
         line_segment new_contour;
-        new_contour.y = contour.y + height;
-        new_contour.from = contour.from;
-        new_contour.to = contour.from + width;
-        contours.insert(contours.begin() + i, new_contour);
-        contour.from = contour.from + width;
+        new_contour.y = contour.y;
+        new_contour.from = contour.from + width;
+        new_contour.to = contour.to;
+        contours.insert(contours.begin() + i + 1, new_contour);
+        contour.y += height;
+        contour.to = contour.from + width;
         concat_line_segment(idx, i);
         return;
       }
