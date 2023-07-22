@@ -18,6 +18,8 @@ int main(int argc, char** argv) {
   in_file >> case_;
   Solver1 solver(case_);
 
+  solver.solve();
+
   std::ofstream out_file(argv[2]);
   solver.dump(out_file);
   return 0;
