@@ -36,12 +36,12 @@ Solver1::Solver1(Case& case_) : Solver(case_) {
 bool Solver1::check_capacity(int index, int die_cell_index) {
   if (index == TOP) {
     return die_util[TOP] +
-               case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() <=
-           die_max_util[TOP];
+               case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() / die_size
+               <= die_max_util[TOP];
   }
   return (die_util[BOTTOM] +
-              case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() <=
-          die_max_util[BOTTOM]);
+              case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() / die_size
+               <= die_max_util[BOTTOM]);
 }
 
 void Solver1::separate_macros_cells(std::vector<std::string> macro_list,
