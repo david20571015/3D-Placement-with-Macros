@@ -29,7 +29,7 @@ Solver1::Solver1(Case& case_) : Solver(case_) {
   
   // initialize die size and utilization
   die_size = case_.size.upper_right_x * case_.size.upper_right_y;
-  die_max_util = {case_.top_die.max_util, case_.bottom_die.max_util};
+  die_max_util = {case_.top_die.max_util / 100, case_.bottom_die.max_util / 100};
   die_util = {0, 0};
 }
 
@@ -109,13 +109,11 @@ void Solver1::decide_what_die(std::vector<std::string> inst_C_index,
 
     if (alter && check_capacity(TOP, die_cell_index)) {
       die_util[TOP] +=
-          case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
-          die_size;
+          case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() / die_size;
       top_die.push_back(inst_name);
     } else if (!alter && check_capacity(BOTTOM, die_cell_index)) {
       die_util[BOTTOM] +=
-          case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
-          die_size;
+          case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() / die_size;
       bottom_die.push_back(inst_name);
     } else {
       std::cerr << "Die utilization exceeds maximum utilization" << std::endl;
