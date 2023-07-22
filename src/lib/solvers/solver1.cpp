@@ -10,10 +10,14 @@ Solver1::Solver1(Case& case_) : Solver(case_) {
   init.y = 0;
   init.from = 0;
   init.to = case_.size.upper_right_x;
+  horizontal_contours.push_back(std::vector<line_segment>());
+  horizontal_contours.push_back(std::vector<line_segment>());
   horizontal_contours[TOP].push_back(init);
   horizontal_contours[BOTTOM].push_back(init);
 
   // initialize spared rows for top and bottom die (cells)
+  spared_rows.push_back(std::vector<std::vector<std::pair<int, int>>>());
+  spared_rows.push_back(std::vector<std::vector<std::pair<int, int>>>());
   spared_rows[TOP].resize(case_.top_die.rows.repeat_count);
   for (int i = 0; i < case_.top_die.rows.repeat_count; ++i) {
     spared_rows[TOP][i].push_back({0, case_.top_die.rows.row_length});
@@ -405,5 +409,5 @@ void Solver1::solve() {
   place_cell_on_die(BOTTOM, bottom_die_cells);
 
   // terminal
-  
+
 }
