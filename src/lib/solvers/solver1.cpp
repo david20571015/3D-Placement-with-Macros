@@ -156,7 +156,7 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
         contours.insert(contours.begin() + i + 1, new_contour);
         contour.y += height;
         contour.to = contour.from + width;
-        concat_line_segment(idx, i);
+        // concat_line_segment(idx, i);
         return;
       }
 
@@ -252,6 +252,8 @@ void Solver1::place_macro_on_die(DIE_INDEX idx,
     int x = 0;
     int y = 0;
     place_macro(idx, x, y, width, height);
+    std::cout << inst_name << " " << x << " " << y << " " 
+    << horizontal_contours[BOTTOM].size() << std::endl;
 
     // update spared rows
     update_spared_rows(idx, x, y, width, height);
