@@ -229,6 +229,8 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width, const 
       }
     }
   }
+
+  std::cout << "Error: no available contour" << std::endl;
 }
 
 void Solver1::place_macro_on_die(DIE_INDEX idx, const std::vector<std::string>& macros) {
@@ -334,6 +336,8 @@ void Solver1::place_cell(DIE_INDEX idx, int& x, int& y, const int width, const i
       }
     }
   }
+
+  std::cout << "Error: no available row" << std::endl;
 }
 
 void Solver1::place_cell_on_die(DIE_INDEX idx, const std::vector<std::string>& cells) {
@@ -356,7 +360,7 @@ void Solver1::place_cell_on_die(DIE_INDEX idx, const std::vector<std::string>& c
     inst.name = inst_name;
     inst.loc_x = x;
     inst.loc_y = y;
-    inst.orientation = orientation;
+    inst.orientation = Inst::R0;
     if (idx == TOP) {
       solution_.top_die_insts.push_back(inst);
     } 
@@ -401,5 +405,5 @@ void Solver1::solve() {
   place_cell_on_die(BOTTOM, bottom_die_cells);
 
   // terminal
-
+  
 }
