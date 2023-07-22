@@ -33,4 +33,6 @@ class Solver1 : public Solver {
   void sort_cell(DIE_INDEX idx, std::vector<std::string>& cell_C_index);
   void update_spared_rows(DIE_INDEX idx, const int x, const int y
                           , const int width, const int height);
+  void place_cell_on_die(DIE_INDEX idx, const std::vector<std::string>& cells);
+  void place_cell(DIE_INDEX idx, int& x, int& y, const int width, const int height);
 };

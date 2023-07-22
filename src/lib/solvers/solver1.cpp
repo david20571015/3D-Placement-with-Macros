@@ -134,9 +134,9 @@ void Solver1::concat_line_segment(DIE_INDEX idx, int i) {
 }
 
 void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width, const int height) {
-  std::vector<line_segment>& h_contour = horizontal_contours[idx];
-  for(int i = 0; i < h_contour.size(); ++i) {
-    line_segment& contour = h_contour[i];
+  std::vector<line_segment>& contours = horizontal_contours[idx];
+  for(int i = 0; i < contours.size(); ++i) {
+    line_segment& contour = contours[i];
 
     if((contour.y + height <= case_.size.upper_right_y)){
       if(width == (contour.to - contour.from)) {
@@ -153,7 +153,7 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width, const 
         new_contour.y = contour.y + height;
         new_contour.from = contour.from;
         new_contour.to = contour.from + width;
-        h_contour.insert(h_contour.begin() + i, new_contour);
+        contours.insert(contours.begin() + i, new_contour);
         contour.from = contour.from + width;
         concat_line_segment(idx, i);
         return;
@@ -163,8 +163,8 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width, const 
         if(contour.from + width <= case_.size.upper_right_x) {
           bool overlap = false;
           int j = i + 1;
-          while(j < h_contour.size() && contour.from + width > h_contour[j].from) {
-            if (contour.y < h_contour[j].y) {
+          while(j < contours.size() && contour.from + width > contours[j].from) {
+            if (contour.y < contours[j].y) {
               std::cout << "Error: overlap" << std::endl;
               overlap = true;
               break;
@@ -180,24 +180,25 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width, const 
             --j;
             
             // update the last contour partially overlapping with the new contour and erase the overlapping contours
-            if (contour.from + width < h_contour[j].to) {
-              h_contour[j].from = contour.from + width;
-              h_contour.erase(h_contour.begin() + i + 1, h_contour.begin() + j);
+            if (contour.from + width < contours[j].to) {
+              contours[j].from = contour.from + width;
+              contours.erase(contours.begin() + i + 1, contours.begin() + j);
             }
             else{
-              h_contour.erase(h_contour.begin() + i + 1, h_contour.begin() + j + 1);
+              contours.erase(contours.begin() + i + 1, contours.begin() + j + 1);
             }
 
             concat_line_segment(idx, i);
             return;
           }
         }
+
         // align with the to point
         if(contour.to - width >= 0) {
           bool overlap = false;
           int j = i - 1;
-          while(j >= 0 && contour.to - width < h_contour[j].to) {
-            if (contour.y < h_contour[j].y) {
+          while(j >= 0 && contour.to - width < contours[j].to) {
+            if (contour.y < contours[j].y) {
               std::cout << "Error: overlap" << std::endl;
               overlap = true;
               break;
@@ -213,12 +214,12 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width, const 
             ++j;
             
             // update the last contour partially overlapping with the new contour and erase the overlapping contours
-            if (contour.to - width > h_contour[j].from) {
-              h_contour[j].to = contour.to - width;
-              h_contour.erase(h_contour.begin() + j + 1, h_contour.begin() + i);
+            if (contour.to - width > contours[j].from) {
+              contours[j].to = contour.to - width;
+              contours.erase(contours.begin() + j + 1, contours.begin() + i);
             }
             else{
-              h_contour.erase(h_contour.begin() + j, h_contour.begin() + i);
+              contours.erase(contours.begin() + j, contours.begin() + i);
             }
 
             concat_line_segment(idx, i);
@@ -264,7 +265,8 @@ void Solver1::place_macro_on_die(DIE_INDEX idx, const std::vector<std::string>& 
     inst.orientation = orientation;
     if (idx == TOP) {
       solution_.top_die_insts.push_back(inst);
-    } else {
+    } 
+    else {
       solution_.bottom_die_insts.push_back(inst);
     }
   }
@@ -272,12 +274,12 @@ void Solver1::place_macro_on_die(DIE_INDEX idx, const std::vector<std::string>& 
 
 void Solver1::update_spared_rows(DIE_INDEX idx, const int x, const int y
                                 , const int width, const int height) {
-  std::vector<std::vector<std::pair<int, int>>>& s_rows = spared_rows[idx];
+  std::vector<std::vector<std::pair<int, int>>>& rows = spared_rows[idx];
   int row_height = case_.get_die_row_height(idx);
   int top_row_index = (y + height) / row_height;
   int bottom_row_index = y / row_height;
 
-  if ((((y + height) % row_height) == 0) || ((y + height) > row_height * (s_rows.size()))) {
+  if ((((y + height) % row_height) == 0) || ((y + height) > row_height * (rows.size()))) {
     top_row_index -= 1;
   }
   if (((y % row_height) == 0) && (y != 0)) {
@@ -288,26 +290,80 @@ void Solver1::update_spared_rows(DIE_INDEX idx, const int x, const int y
   int right = x + width;
   for (int i = bottom_row_index; i <= top_row_index; ++i) {
     int j = 0;
-    while (j < s_rows[i].size() && left > s_rows[i][j].second) {
+    while ((j < rows[i].size() - 1) && (left > rows[i][j].second)) {
       ++j;
     }
-    if ((left == s_rows[i][j].first) && (right == s_rows[i][j].second)) {
-      s_rows[i].erase(s_rows[i].begin() + j);
+    if ((left == rows[i][j].first) && (right == rows[i][j].second)) {
+      rows[i].erase(rows[i].begin() + j);
     }
-    else if(left == s_rows[i][j].first) {
-      s_rows[i][j].first = right;
+    else if(left == rows[i][j].first) {
+      rows[i][j].first = right;
     }
-    else if(right == s_rows[i][j].second) {
-      s_rows[i][j].second = left;
+    else if(right == rows[i][j].second) {
+      rows[i][j].second = left;
     }
     else {
       std::pair<int, int> new_pair;
       new_pair.first = right;
-      new_pair.second = s_rows[i][j].second;
-      s_rows[i].insert(s_rows[i].begin() + j + 1, new_pair);
-      s_rows[i][j].second = left;
+      new_pair.second = rows[i][j].second;
+      rows[i].insert(rows[i].begin() + j + 1, new_pair);
+      rows[i][j].second = left;
     }
   }
+}
+
+void Solver1::place_cell(DIE_INDEX idx, int& x, int& y, const int width, const int height) {
+  std::vector<std::vector<std::pair<int, int>>>& rows = spared_rows[idx];
+  for (int i = 0; i < rows.size(); ++i) {
+    if (rows[i].empty()) {
+      continue;
+    }
+
+    for (int j = 0; j < rows[i].size(); ++j) {
+      if ((rows[i][j].second - rows[i][j].first) == width) {
+        x = rows[i][j].first;
+        y = i * height;
+        rows[i].erase(rows[i].begin() + j);
+        return;
+      }
+      else if (width < (rows[i][j].second - rows[i][j].first)) {
+        x = rows[i][j].first;
+        y = i * height;
+        rows[i][j].first = rows[i][j].first + width;
+        return;
+      }
+    }
+  }
+}
+
+void Solver1::place_cell_on_die(DIE_INDEX idx, const std::vector<std::string>& cells) {
+  for (auto& inst_name: cells) {
+    const std::string inst_type = case_.netlist.inst[inst_name];
+    const int die_cell_index = case_.get_cell_index(inst_type);
+
+    int width = case_.get_lib_cell_width(idx, die_cell_index);
+    int height = case_.get_lib_cell_height(idx, die_cell_index);
+
+    int x = 0;
+    int y = 0;
+    place_cell(idx, x, y, width, height);
+
+    // update
+    case_.netlist.placed[inst_name] = true;
+    
+    // update solution
+    Inst inst;
+    inst.name = inst_name;
+    inst.loc_x = x;
+    inst.loc_y = y;
+    inst.orientation = orientation;
+    if (idx == TOP) {
+      solution_.top_die_insts.push_back(inst);
+    } 
+    else {
+      solution_.bottom_die_insts.push_back(inst);
+    }
+  } 
 }
 
 void Solver1::solve() {
@@ -339,4 +395,11 @@ void Solver1::solve() {
   // sort by width
   sort_cell(TOP, top_die_cells);
   sort_cell(BOTTOM, bottom_die_cells);
+
+  // place cells on the top and bottom die
+  place_cell_on_die(TOP, top_die_cells);
+  place_cell_on_die(BOTTOM, bottom_die_cells);
+
+  // terminal
+
 }
