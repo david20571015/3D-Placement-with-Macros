@@ -123,15 +123,15 @@ void Solver1::decide_what_die(std::vector<std::string> inst_C_index,
 }
 
 void Solver1::concat_line_segment(DIE_INDEX idx, int i) {
-  std::vector<line_segment>& h_contour = horizontal_contours[idx];
-  if (i > 0 && h_contour[i - 1].y == h_contour[i].y) {
-    h_contour[i - 1].to = h_contour[i].to;
-    h_contour.erase(h_contour.begin() + i);
+  std::vector<line_segment>& contours = horizontal_contours[idx];
+  if (i > 0 && contours[i - 1].y == contours[i].y) {
+    contours[i - 1].to = contours[i].to;
+    contours.erase(contours.begin() + i);
     --i; // adjust the index
   }
-  if (i < h_contour.size() - 1 && h_contour[i + 1].y == h_contour[i].y) {
-    h_contour[i].to = h_contour[i + 1].to;
-    h_contour.erase(h_contour.begin() + i + 1);
+  if (i < contours.size() - 1 && contours[i + 1].y == contours[i].y) {
+    contours[i].to = contours[i + 1].to;
+    contours.erase(contours.begin() + i + 1);
   }
 }
 
