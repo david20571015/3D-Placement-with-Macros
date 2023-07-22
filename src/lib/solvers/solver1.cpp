@@ -9,12 +9,12 @@ Solver1::Solver1(Case& case_) : Solver(case_) {
   horizontal_contours = {{{0, 0, case_.size.upper_right_x}},
                          {{0, 0, case_.size.upper_right_x}}};
 
-  spared_rows = {{}, {}};
-  // initialize spared rows for top and bottom die (cells)
-  spared_rows[TOP].resize(case_.top_die.rows.repeat_count,
-                          {{0, case_.top_die.rows.row_length}});
-  spared_rows[BOTTOM].resize(case_.bottom_die.rows.repeat_count,
-                             {{0, case_.bottom_die.rows.row_length}});
+  spared_rows = {std::vector<std::vector<std::pair<int, int>>>(
+                     case_.top_die.rows.repeat_count,
+                     {{0, case_.top_die.rows.row_length}}),
+                 std::vector<std::vector<std::pair<int, int>>>(
+                     case_.bottom_die.rows.repeat_count,
+                     {{0, case_.bottom_die.rows.row_length}})};
 
   // initialize die size and utilization
   die_size = case_.size.upper_right_x * case_.size.upper_right_y;
@@ -252,8 +252,8 @@ void Solver1::place_macro_on_die(DIE_INDEX idx,
     int x = 0;
     int y = 0;
     place_macro(idx, x, y, width, height);
-    std::cout << inst_name << " " << x << " " << y << " " 
-    << horizontal_contours[BOTTOM].size() << std::endl;
+    std::cout << inst_name << " " << x << " " << y << " "
+              << horizontal_contours[BOTTOM].size() << std::endl;
 
     // update spared rows
     update_spared_rows(idx, x, y, width, height);
