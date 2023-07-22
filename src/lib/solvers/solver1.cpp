@@ -6,26 +6,15 @@
 
 Solver1::Solver1(Case& case_) : Solver(case_) {
   // initialize horizontal contours for top and bottom die (macros)
-  line_segment init;
-  init.y = 0;
-  init.from = 0;
-  init.to = case_.size.upper_right_x;
-  horizontal_contours.emplace_back();
-  horizontal_contours.emplace_back();
-  horizontal_contours[TOP].push_back(init);
-  horizontal_contours[BOTTOM].push_back(init);
+  horizontal_contours = {{{0, 0, case_.size.upper_right_x}},
+                         {{0, 0, case_.size.upper_right_x}}};
 
+  spared_rows = {{}, {}};
   // initialize spared rows for top and bottom die (cells)
-  spared_rows.emplace_back();
-  spared_rows.emplace_back();
-  spared_rows[TOP].resize(case_.top_die.rows.repeat_count);
-  for (int i = 0; i < case_.top_die.rows.repeat_count; ++i) {
-    spared_rows[TOP][i].emplace_back(0, case_.top_die.rows.row_length);
-  }
-  spared_rows[BOTTOM].resize(case_.bottom_die.rows.repeat_count);
-  for (int i = 0; i < case_.bottom_die.rows.repeat_count; ++i) {
-    spared_rows[BOTTOM][i].emplace_back(0, case_.bottom_die.rows.row_length);
-  }
+  spared_rows[TOP].resize(case_.top_die.rows.repeat_count,
+                          {{0, case_.top_die.rows.row_length}});
+  spared_rows[BOTTOM].resize(case_.bottom_die.rows.repeat_count,
+                             {{0, case_.bottom_die.rows.row_length}});
 
   // initialize die size and utilization
   die_size = case_.size.upper_right_x * case_.size.upper_right_y;
