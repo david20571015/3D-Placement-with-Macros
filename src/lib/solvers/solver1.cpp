@@ -137,36 +137,34 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
                           const int height) {
   std::vector<line_segment>& contours = horizontal_contours[idx];
   for (int i = 0; i < contours.size(); ++i) {
-    line_segment& contour = contours[i];
-
-    if ((contour.y + height <= case_.size.upper_right_y)) {
-      if (width == (contour.to - contour.from)) {
-        x = contour.from;
-        y = contour.y;
-        contour.y += height;
+    if ((contours[i].y + height <= case_.size.upper_right_y)) {
+      if (width == (contours[i].to - contours[i].from)) {
+        x = contours[i].from;
+        y = contours[i].y;
+        contours[i].y += height;
         concat_line_segment(idx, i);
         return;
       }
-      if (width < (contour.to - contour.from)) {
-        x = contour.from;
-        y = contour.y;
+      if (width < (contours[i].to - contours[i].from)) {
+        x = contours[i].from;
+        y = contours[i].y;
         line_segment new_contour;
-        new_contour.y = contour.y;
-        new_contour.from = contour.from + width;
-        new_contour.to = contour.to;
+        new_contour.y = contours[i].y;
+        new_contour.from = contours[i].from + width;
+        new_contour.to = contours[i].to;
         contours.insert(contours.begin() + i + 1, new_contour);
-        contour.y += height;
-        contour.to = contour.from + width;
+        contours[i].y += height;
+        contours[i].to = contours[i].from + width;
         concat_line_segment(idx, i);
         return;
       }
 
       // align with the from point
-      if (contour.from + width <= case_.size.upper_right_x) {
+      if (contours[i].from + width <= case_.size.upper_right_x) {
         bool overlap = false;
         int j = i + 1;
-        while (j < contours.size() && contour.from + width > contours[j].from) {
-          if (contour.y < contours[j].y) {
+        while (j < contours.size() && contours[i].from + width > contours[j].from) {
+          if (contours[i].y < contours[j].y) {
             std::cout << "Error: overlap" << std::endl;
             overlap = true;
             break;
@@ -175,16 +173,16 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
         }
 
         if (!overlap) {
-          x = contour.from;
-          y = contour.y;
-          contour.y = contour.y + height;
-          contour.to = contour.from + width;
+          x = contours[i].from;
+          y = contours[i].y;
+          contours[i].y = contours[i].y + height;
+          contours[i].to = contours[i].from + width;
           --j;
 
           // update the last contour partially overlapping with the new
           // contour and erase the overlapping contours
-          if (contour.from + width < contours[j].to) {
-            contours[j].from = contour.from + width;
+          if (contours[i].from + width < contours[j].to) {
+            contours[j].from = contours[i].from + width;
             contours.erase(contours.begin() + i + 1, contours.begin() + j);
           } else {
             contours.erase(contours.begin() + i + 1, contours.begin() + j + 1);
@@ -196,11 +194,11 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
       }
 
       // align with the to point
-      if (contour.to - width >= 0) {
+      if (contours[i].to - width >= 0) {
         bool overlap = false;
         int j = i - 1;
-        while (j >= 0 && contour.to - width < contours[j].to) {
-          if (contour.y < contours[j].y) {
+        while (j >= 0 && contours[i].to - width < contours[j].to) {
+          if (contours[i].y < contours[j].y) {
             std::cout << "Error: overlap" << std::endl;
             overlap = true;
             break;
@@ -209,16 +207,16 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
         }
 
         if (!overlap) {
-          x = contour.from;
-          y = contour.y;
-          contour.y = contour.y + height;
-          contour.from = contour.to - width;
+          x = contours[i].from;
+          y = contours[i].y;
+          contours[i].y = contours[i].y + height;
+          contours[i].from = contours[i].to - width;
           ++j;
 
           // update the last contour partially overlapping with the new
           // contour and erase the overlapping contours
-          if (contour.to - width > contours[j].from) {
-            contours[j].to = contour.to - width;
+          if (contours[i].to - width > contours[j].from) {
+            contours[j].to = contours[i].to - width;
             contours.erase(contours.begin() + j + 1, contours.begin() + i);
           } else {
             contours.erase(contours.begin() + j, contours.begin() + i);
@@ -308,8 +306,8 @@ void Solver1::update_spared_rows(DIE_INDEX idx, const int x, const int y,
       std::pair<int, int> new_pair;
       new_pair.first = right;
       new_pair.second = rows[i][j].second;
-      rows[i].insert(rows[i].begin() + j + 1, new_pair);
       rows[i][j].second = left;
+      rows[i].insert(rows[i].begin() + j + 1, new_pair);
     }
   }
 }
