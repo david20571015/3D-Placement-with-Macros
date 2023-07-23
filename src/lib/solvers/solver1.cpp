@@ -127,6 +127,7 @@ void Solver1::concat_line_segment(DIE_INDEX idx, int i) {
     --i;  // adjust the index
   }
   if ((i < contours.size() - 1) && (contours[i + 1].y == contours[i].y)) {
+    std::cout << 'a' << std::endl;
     contours[i].to = contours[i + 1].to;
     contours.erase(contours.begin() + i + 1);
   }
@@ -156,7 +157,7 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
         contours.insert(contours.begin() + i + 1, new_contour);
         contour.y += height;
         contour.to = contour.from + width;
-        // concat_line_segment(idx, i);
+        concat_line_segment(idx, i);
         return;
       }
 
