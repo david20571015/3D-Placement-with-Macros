@@ -165,7 +165,7 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
         int j = i + 1;
         while (j < contours.size() && contours[i].from + width > contours[j].from) {
           if (contours[i].y < contours[j].y) {
-            std::cout << "Error: overlap" << std::endl;
+            std::cout << "Error: overlap with other macros" << std::endl;
             overlap = true;
             break;
           }
@@ -199,7 +199,7 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
         int j = i - 1;
         while (j >= 0 && contours[i].to - width < contours[j].to) {
           if (contours[i].y < contours[j].y) {
-            std::cout << "Error: overlap" << std::endl;
+            std::cout << "Error: overlap with other macros" << std::endl;
             overlap = true;
             break;
           }
