@@ -39,6 +39,7 @@ class Solver {
   virtual ~Solver() = default;
   virtual void solve() = 0;
   void dump(std::ostream& output);
+  // Solution solution_;
 
  protected:
   Case case_;

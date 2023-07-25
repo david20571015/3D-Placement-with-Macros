@@ -4,6 +4,8 @@
 
 #include "data/case.h"
 
+#include "fstream"
+
 Solver1::Solver1(Case& case_) : Solver(case_) {
   // initialize horizontal contours for top and bottom die (macros)
   horizontal_contours = {{{0, 0, case_.size.upper_right_x}},
@@ -373,6 +375,80 @@ void Solver1::place_cell_on_die(DIE_INDEX idx,
   }
 }
 
+void Solver1::draw_macro(){
+
+    ///////////TOP
+    std::ofstream draw_macro_cell_file;
+    draw_macro_cell_file.open(std::string("top_die_draw_macro_and_cell.txt"));
+    //inst number
+    // draw_macro_cell_file << case_.netlist.inst.size() << std::endl;
+    draw_macro_cell_file << case_.top_die.rows.repeat_count + solution_.top_die_insts.size() << std::endl;
+    draw_macro_cell_file << case_.size.upper_right_x << " "  << case_.size.upper_right_y << std::endl;
+    int count = -1;
+    //draw row
+    for(int i = 0;i < case_.top_die.rows.repeat_count;i++){
+      draw_macro_cell_file << count << " " << 0 << " " << i* case_.get_die_row_height(TOP) << " " << case_.get_die_row_width(TOP) << " " << case_.get_die_row_height(TOP) << std::endl;
+      count --;
+    }  
+    count = 1;
+    //draw macro cell
+    for(auto& inst : solution_.top_die_insts){
+      std::string inst_type = case_.netlist.inst[inst.name];
+      const int die_cell_index = case_.get_cell_index(inst_type);
+      const int width = case_.get_lib_cell_width(TOP, die_cell_index);
+      const int height = case_.get_lib_cell_height(TOP, die_cell_index);
+      const int is_macro = case_.get_is_macro(TOP, die_cell_index); //0:cell 1:macro
+      if(is_macro == 1)
+        draw_macro_cell_file << 0 << " ";
+      else
+        draw_macro_cell_file << count << " ";
+      if (inst.orientation == Inst::R0)
+        draw_macro_cell_file  << inst.loc_x << " " << inst.loc_y  << " " <<  width << " " << height << std::endl;
+      else 
+        draw_macro_cell_file  << inst.loc_x << " " << inst.loc_y  << " " <<  height << " " << width << std::endl;
+      count ++;
+    }
+    draw_macro_cell_file.close();
+
+    //////////BOTTOM
+    draw_macro_cell_file.open(std::string("bottom_die_draw_macro_and_cell.txt"));
+    //inst number
+    // draw_macro_cell_file << case_.netlist.inst.size() << std::endl;
+    draw_macro_cell_file << case_.bottom_die.rows.repeat_count + solution_.bottom_die_insts.size() << std::endl;
+    draw_macro_cell_file << case_.size.upper_right_x << " "  << case_.size.upper_right_y << std::endl;
+    count = -1;
+    //draw row
+    for(int i = 0;i < case_.bottom_die.rows.repeat_count;i++){
+      draw_macro_cell_file << count << " " << 0 << " " << i* case_.get_die_row_height(BOTTOM) << " " << case_.get_die_row_width(BOTTOM) << " " << case_.get_die_row_height(BOTTOM) << std::endl;
+      count --;
+    }
+    count = 1;
+    //draw macro cell
+    for(auto& inst : solution_.bottom_die_insts){
+      std::string inst_type = case_.netlist.inst[inst.name];
+      const int die_cell_index = case_.get_cell_index(inst_type);
+      const int width = case_.get_lib_cell_width(BOTTOM, die_cell_index);
+      const int height = case_.get_lib_cell_height(BOTTOM, die_cell_index);
+      const int is_macro = case_.get_is_macro(BOTTOM, die_cell_index); //0:cell 1:macro
+      if(is_macro == 1)
+        draw_macro_cell_file << 0 << " ";
+      else
+        draw_macro_cell_file << count << " ";
+      if (inst.orientation == Inst::R0)
+        draw_macro_cell_file << inst.loc_x << " " << inst.loc_y  << " " <<  width << " " << height << std::endl;
+      else 
+        draw_macro_cell_file << inst.loc_x << " " << inst.loc_y  << " " <<  height << " " << width << std::endl;
+      count ++;
+    }
+
+
+
+
+
+
+  // draw_macro_cell_file <<  << std::endl;
+}
+
 void Solver1::solve() {
   // separate macros and cells
   std::vector<std::string> macro_C_index;
@@ -408,4 +484,9 @@ void Solver1::solve() {
   place_cell_on_die(BOTTOM, bottom_die_cells);
 
   // terminal
+
+
+
+  //draw macro
+  draw_macro();
 }

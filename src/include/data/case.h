@@ -34,6 +34,8 @@ struct Case {
   int get_lib_cell_width(int die_index, int lib_cell_index) const;
   int get_lib_cell_height(int die_index, int lib_cell_index) const;
   int get_die_row_height(int die_index) const;
+  int get_die_row_width(int die_index) const;
+  int get_is_macro(int die_index, int lib_cell_index) const;
 
   friend std::istream& operator>>(std::istream& input, Case& case_);
 };
