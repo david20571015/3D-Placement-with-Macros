@@ -21,8 +21,8 @@ Solver1::Solver1(Case& case_) : Solver(case_) {
   // initialize die size and utilization
   die_size = case_.size.upper_right_x * case_.size.upper_right_y;
   const int percent = 100;
-  die_max_util = {double(case_.top_die.max_util) / percent,
-                  double(case_.bottom_die.max_util) / percent};
+  die_max_util = {float(case_.top_die.max_util) / percent,
+                  float(case_.bottom_die.max_util) / percent};
   die_util = {0, 0};
 }
 
@@ -63,12 +63,12 @@ void Solver1::sort_macro(DIE_INDEX idx,
               const std::string b_type = case_.netlist.inst[b];
               const int a_die_cell_index = case_.get_cell_index(a_type);
               const int b_die_cell_index = case_.get_cell_index(b_type);
-              int a_cell_size_ratio =
+              double a_cell_size_ratio =
                   case_.get_lib_cell_height(idx, a_die_cell_index) /
-                  case_.get_lib_cell_width(idx, a_die_cell_index);
-              int b_cell_size_ratio =
+                  double(case_.get_lib_cell_width(idx, a_die_cell_index));
+              double b_cell_size_ratio =
                   case_.get_lib_cell_height(idx, b_die_cell_index) /
-                  case_.get_lib_cell_width(idx, b_die_cell_index);
+                  double(case_.get_lib_cell_width(idx, b_die_cell_index));
 
               if (a_cell_size_ratio < 1) {
                 a_cell_size_ratio = 1 / a_cell_size_ratio;
@@ -77,7 +77,7 @@ void Solver1::sort_macro(DIE_INDEX idx,
                 b_cell_size_ratio = 1 / b_cell_size_ratio;
               }
 
-              return a_cell_size_ratio >= b_cell_size_ratio;
+              return a_cell_size_ratio > b_cell_size_ratio;
             });
 }
 
@@ -89,10 +89,10 @@ void Solver1::sort_cell(DIE_INDEX idx, std::vector<std::string>& cell_C_index) {
         const std::string b_type = case_.netlist.inst[b];
         const int a_die_cell_index = case_.get_cell_index(a_type);
         const int b_die_cell_index = case_.get_cell_index(b_type);
-        const int a_cell_size = case_.get_lib_cell_width(idx, a_die_cell_index);
-        const int b_cell_size = case_.get_lib_cell_width(idx, b_die_cell_index);
+        int a_cell_size = case_.get_lib_cell_width(idx, a_die_cell_index);
+        int b_cell_size = case_.get_lib_cell_width(idx, b_die_cell_index);
 
-        return a_cell_size >= b_cell_size;
+        return a_cell_size > b_cell_size;
       });
 }
 
@@ -111,12 +111,12 @@ void Solver1::decide_what_die(const std::vector<std::string>& inst_C_index,
     if ((alter) && (check_capacity(TOP, die_cell_index))) {
       die_util[TOP] +=
           (case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
-          double(die_size));
+          float(die_size));
       top_die.push_back(inst_name);
     } else if ((!alter) && (check_capacity(BOTTOM, die_cell_index))) {
       die_util[BOTTOM] +=
           (case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
-          double(die_size));
+          float(die_size));
       bottom_die.push_back(inst_name);
     } else {
       std::cerr << "Die utilization exceeds maximum utilization" << std::endl;
@@ -139,7 +139,7 @@ void Solver1::concat_line_segment(DIE_INDEX idx, int i) {
   }
 }
 
-void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
+bool Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
                           const int height) {
   std::vector<line_segment>& contours = horizontal_contours[idx];
   for (int i = 0; i < contours.size(); ++i) {
@@ -149,7 +149,7 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
         y = contours[i].y;
         contours[i].y += height;
         concat_line_segment(idx, i);
-        return;
+        return true;
       }
       if (width < (contours[i].to - contours[i].from)) {
         x = contours[i].from;
@@ -162,7 +162,7 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
         contours[i].y += height;
         contours[i].to = contours[i].from + width;
         concat_line_segment(idx, i);
-        return;
+        return true;
       }
 
       // align with the from point
@@ -195,7 +195,7 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
           }
 
           concat_line_segment(idx, i);
-          return;
+          return true;
         }
       }
 
@@ -229,13 +229,14 @@ void Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
           }
 
           concat_line_segment(idx, i);
-          return;
+          return true;
         }
       }
     }
   }
 
   std::cout << "Error: no available contour" << std::endl;
+  return false;
 }
 
 void Solver1::place_macro_on_die(DIE_INDEX idx,
@@ -243,10 +244,10 @@ void Solver1::place_macro_on_die(DIE_INDEX idx,
   for (const auto& inst_name : macros) {
     const std::string inst_type = case_.netlist.inst[inst_name];
     const int die_cell_index = case_.get_cell_index(inst_type);
-
     int width = case_.get_lib_cell_width(idx, die_cell_index);
     int height = case_.get_lib_cell_height(idx, die_cell_index);
     Inst::rotate orientation = Inst::R0;
+    case_.netlist.placed[inst_name] = false;
 
     if (width > height) {
       std::swap(width, height);
@@ -256,26 +257,29 @@ void Solver1::place_macro_on_die(DIE_INDEX idx,
     // place
     int x = 0;
     int y = 0;
-    place_macro(idx, x, y, width, height);
-    std::cout << idx << " " << inst_name << " " << x << " " << y << " "
-              << horizontal_contours[BOTTOM].size() << std::endl;
+    bool success = place_macro(idx, x, y, width, height);
+    // std::cout << idx << " " << inst_name << " " << x << " " << y << " "
+    //           << horizontal_contours[BOTTOM].size() << std::endl;
 
-    // update spared rows
-    update_spared_rows(idx, x, y, width, height);
+    if (success) {
+      std::cout << idx << " " << inst_name << " " << x << " " << y << std::endl;
+      // update spared rows
+      update_spared_rows(idx, x, y, width, height);
 
-    // update
-    case_.netlist.placed[inst_name] = true;
+      // update
+      case_.netlist.placed[inst_name] = true;
 
-    // update solution
-    Inst inst;
-    inst.name = inst_name;
-    inst.loc_x = x;
-    inst.loc_y = y;
-    inst.orientation = orientation;
-    if (idx == TOP) {
-      solution_.top_die_insts.push_back(inst);
-    } else {
-      solution_.bottom_die_insts.push_back(inst);
+      // update solution
+      Inst inst;
+      inst.name = inst_name;
+      inst.loc_x = x;
+      inst.loc_y = y;
+      inst.orientation = orientation;
+      if (idx == TOP) {
+        solution_.top_die_insts.push_back(inst);
+      } else {
+        solution_.bottom_die_insts.push_back(inst);
+      }
     }
   }
 }
@@ -317,7 +321,7 @@ void Solver1::update_spared_rows(DIE_INDEX idx, const int x, const int y,
   }
 }
 
-void Solver1::place_cell(DIE_INDEX idx, int& x, int& y, const int width,
+bool Solver1::place_cell(DIE_INDEX idx, int& x, int& y, const int width,
                          const int height) {
   std::vector<std::vector<std::pair<int, int>>>& rows = spared_rows[idx];
   for (int i = 0; i < rows.size(); ++i) {
@@ -330,18 +334,19 @@ void Solver1::place_cell(DIE_INDEX idx, int& x, int& y, const int width,
         x = rows[i][j].first;
         y = i * height;
         rows[i].erase(rows[i].begin() + j);
-        return;
+        return true;
       }
       if (width < (rows[i][j].second - rows[i][j].first)) {
         x = rows[i][j].first;
         y = i * height;
         rows[i][j].first = rows[i][j].first + width;
-        return;
+        return true;
       }
     }
   }
 
   std::cout << "Error: no available row" << std::endl;
+  return false;
 }
 
 void Solver1::place_cell_on_die(DIE_INDEX idx,
@@ -349,28 +354,31 @@ void Solver1::place_cell_on_die(DIE_INDEX idx,
   for (const auto& inst_name : cells) {
     const std::string inst_type = case_.netlist.inst[inst_name];
     const int die_cell_index = case_.get_cell_index(inst_type);
-
     const int width = case_.get_lib_cell_width(idx, die_cell_index);
     const int height = case_.get_lib_cell_height(idx, die_cell_index);
+    case_.netlist.placed[inst_name] = false;
 
     int x = 0;
     int y = 0;
-    place_cell(idx, x, y, width, height);
-    std::cout << idx << " " << inst_name << " " << x << " " << y << std::endl;
+    bool success = place_cell(idx, x, y, width, height);
+    // std::cout << idx << " " << inst_name << " " << x << " " << y << std::endl;
 
-    // update
-    case_.netlist.placed[inst_name] = true;
+    if (success) {
+      // std::cout << idx << " " << inst_name << " " << x << " " << y << std::endl;
+      // update
+      case_.netlist.placed[inst_name] = true;
 
-    // update solution
-    Inst inst;
-    inst.name = inst_name;
-    inst.loc_x = x;
-    inst.loc_y = y;
-    inst.orientation = Inst::R0;
-    if (idx == TOP) {
-      solution_.top_die_insts.push_back(inst);
-    } else {
-      solution_.bottom_die_insts.push_back(inst);
+      // update solution
+      Inst inst;
+      inst.name = inst_name;
+      inst.loc_x = x;
+      inst.loc_y = y;
+      inst.orientation = Inst::R0;
+      if (idx == TOP) {
+        solution_.top_die_insts.push_back(inst);
+      } else {
+        solution_.bottom_die_insts.push_back(inst);
+      }
     }
   }
 }
@@ -440,13 +448,41 @@ void Solver1::draw_macro(){
         draw_macro_cell_file << inst.loc_x << " " << inst.loc_y  << " " <<  height << " " << width << std::endl;
       count ++;
     }
+}
 
+void Solver1::get_inst_that_not_placed(DIE_INDEX idx, const std::vector<std::string>& inst_C_index
+                                        , std::vector<std::string>& not_placed) {
+  for (const auto& inst_name : inst_C_index) {
+    if (!case_.netlist.placed[inst_name]) {
+      not_placed.push_back(inst_name);
+      const std::string inst_type = case_.netlist.inst[inst_name];
+      const int die_cell_index = case_.get_cell_index(inst_type);
 
-
-
-
-
-  // draw_macro_cell_file <<  << std::endl;
+      if (idx == TOP){
+        die_util[idx] -= (case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
+                            float(die_size));
+        if (check_capacity(BOTTOM, die_cell_index)){
+          die_util[BOTTOM] += (case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
+                            float(die_size));
+        }
+        else {
+          std::cerr << "Has a macro that can't be place on the top nor bottom die" << std::endl;
+        }
+      }
+      else {
+        die_util[idx] -= (case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
+                            float(die_size));
+        if (check_capacity(TOP, die_cell_index)){
+          die_util[TOP] += (case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
+                            float(die_size));
+        }
+        else {
+          std::cerr << "Has a macro that can't be place on the top nor bottom die" << std::endl;
+        }
+      }
+      
+    }
+  }
 }
 
 void Solver1::solve() {
@@ -456,6 +492,7 @@ void Solver1::solve() {
   separate_macros_cells(case_.get_macro_list(), macro_C_index, cell_C_index);
 
   // macro
+  std::cout << "macro" << std::endl;
   // decide what die each macro should be placed
   std::vector<std::string> top_die_macros;
   std::vector<std::string> bottom_die_macros;
@@ -466,10 +503,27 @@ void Solver1::solve() {
   sort_macro(BOTTOM, bottom_die_macros);
 
   // place macros on the top and bottom die
+  std::cout << "place macro" << std::endl; // debug: case3: core dumped
   place_macro_on_die(TOP, top_die_macros);
   place_macro_on_die(BOTTOM, bottom_die_macros);
+  std::cout << "place macro done" << std::endl;
+
+  // get macros that are not placed
+  std::vector<std::string> top_not_placed_macros;
+  std::vector<std::string> bottom_not_placed_macros;
+  get_inst_that_not_placed(TOP, top_die_macros, top_not_placed_macros);
+  get_inst_that_not_placed(BOTTOM, bottom_die_macros, bottom_not_placed_macros);
+
+  // sort by (height / width)
+  sort_macro(TOP, bottom_not_placed_macros);
+  sort_macro(BOTTOM, top_not_placed_macros);
+
+  // place them on the other die
+  place_macro_on_die(TOP, bottom_not_placed_macros);
+  place_macro_on_die(BOTTOM, top_not_placed_macros);
 
   // cell
+  std::cout << "cell" << std::endl;
   // decide what die each cell should be placed
   std::vector<std::string> top_die_cells;
   std::vector<std::string> bottom_die_cells;
@@ -483,9 +537,21 @@ void Solver1::solve() {
   place_cell_on_die(TOP, top_die_cells);
   place_cell_on_die(BOTTOM, bottom_die_cells);
 
+  // get cells that are not placed
+  std::vector<std::string> top_not_placed_cells;
+  std::vector<std::string> bottom_not_placed_cells;
+  get_inst_that_not_placed(TOP, top_die_cells, top_not_placed_cells);
+  get_inst_that_not_placed(BOTTOM, bottom_die_cells, bottom_not_placed_cells);
+
+  // sort by width
+  sort_cell(TOP, bottom_not_placed_cells);
+  sort_cell(BOTTOM, top_not_placed_cells);
+
+  // place them on the other die
+  place_cell_on_die(TOP, bottom_not_placed_cells);
+  place_cell_on_die(BOTTOM, top_not_placed_cells);
+
   // terminal
-
-
 
   //draw macro
   draw_macro();
