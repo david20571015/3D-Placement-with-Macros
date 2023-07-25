@@ -496,14 +496,15 @@ void Solver1::solve() {
   // decide what die each macro should be placed
   std::vector<std::string> top_die_macros;
   std::vector<std::string> bottom_die_macros;
-  decide_what_die(macro_C_index, top_die_macros, bottom_die_macros);
+  decide_what_die(macro_C_index, top_die_macros, bottom_die_macros); 
+  // error: case2: there are macros that can't be placed on the top nor bottom die
 
   // sort by (height / width)
   sort_macro(TOP, top_die_macros);
   sort_macro(BOTTOM, bottom_die_macros);
 
   // place macros on the top and bottom die
-  std::cout << "place macro" << std::endl; // debug: case3: core dumped
+  std::cout << "place macro" << std::endl; // error: case3: core dumped
   place_macro_on_die(TOP, top_die_macros);
   place_macro_on_die(BOTTOM, bottom_die_macros);
   std::cout << "place macro done" << std::endl;
