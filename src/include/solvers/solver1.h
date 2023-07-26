@@ -36,7 +36,8 @@ class Solver1 : public Solver {
   void place_cell_on_die(DIE_INDEX idx, const std::vector<std::string>& cells);
   bool place_cell(DIE_INDEX idx, int& x, int& y, int width, int height);
   void get_inst_that_not_placed(DIE_INDEX idx, const std::vector<std::string>& inst_C_index
-                                , std::vector<std::string>& not_placed);  
+                                , std::vector<std::string>& not_placed);
+  void place_terminal();
 
   void draw_macro();
 };
