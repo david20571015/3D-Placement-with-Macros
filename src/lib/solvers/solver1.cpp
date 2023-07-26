@@ -268,6 +268,7 @@ void Solver1::place_macro_on_die(DIE_INDEX idx,
 
       // update
       case_.netlist.placed[inst_name] = true;
+      case_.netlist.inst_top_or_bottom[inst_name] = idx;
 
       // update solution
       Inst inst;
@@ -367,6 +368,7 @@ void Solver1::place_cell_on_die(DIE_INDEX idx,
       // std::cout << idx << " " << inst_name << " " << x << " " << y << std::endl;
       // update
       case_.netlist.placed[inst_name] = true;
+      case_.netlist.inst_top_or_bottom[inst_name] = idx;
 
       // update solution
       Inst inst;
@@ -485,6 +487,10 @@ void Solver1::get_inst_that_not_placed(DIE_INDEX idx, const std::vector<std::str
   }
 }
 
+void Solver1::place_terminal() {
+  // to-do
+}
+
 void Solver1::solve() {
   // separate macros and cells
   std::vector<std::string> macro_C_index;
@@ -553,6 +559,7 @@ void Solver1::solve() {
   place_cell_on_die(BOTTOM, top_not_placed_cells);
 
   // terminal
+  place_terminal();
 
   //draw macro
   draw_macro();
