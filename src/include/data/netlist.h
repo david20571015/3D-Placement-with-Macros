@@ -17,6 +17,7 @@ struct Net {
 struct NetList {
   std::unordered_map<std::string, std::string> inst;
   std::unordered_map<std::string, bool> placed;
+  std::unordered_map<std::string, int> inst_top_or_bottom;
   std::vector<Net> nets;
 
   friend std::istream& operator>>(std::istream& input, NetList& net);
