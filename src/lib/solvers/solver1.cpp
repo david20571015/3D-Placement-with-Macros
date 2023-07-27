@@ -135,9 +135,11 @@ void Solver1::decide_what_die_cell(const std::vector<std::string>& inst_C_index,
   for (auto& net: case_.netlist.nets) {
     for (auto& pin: net.pins) {
       std::string inst_name = pin.first;
-      if (!decided.count(inst_name)) {
+      if ((!decided.count(inst_name)) && 
+          (std::find(inst_C_index.begin(), inst_C_index.end(), inst_name) != inst_C_index.end())) {
         const std::string inst_type = case_.netlist.inst[inst_name];
         const int die_cell_index = case_.get_cell_index(inst_type);
+
         if (check_capacity(TOP, die_cell_index)) {
           die_util[TOP] +=
               (case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
@@ -151,8 +153,7 @@ void Solver1::decide_what_die_cell(const std::vector<std::string>& inst_C_index,
           bottom_die.push_back(inst_name);
           decided.insert(inst_name);
         } else {
-          std::cerr << "Cell: Die utilization exceeds maximum utilization" << std::endl;
-          return;
+          std::cout << "Cell: Die utilization exceeds maximum utilization" << std::endl;
         }
       }
     }
@@ -173,8 +174,8 @@ void Solver1::concat_line_segment(DIE_INDEX idx, int i) {
   }
 }
 
-bool Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
-                          const int height) {
+bool Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width
+                          , const int height, std::string inst_name) {
   std::vector<line_segment>& contours = horizontal_contours[idx];
   for (int i = 0; i < contours.size(); ++i) {
     if ((contours[i].y + height <= case_.size.upper_right_y)) {
@@ -205,7 +206,7 @@ bool Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
         int j = i + 1;
         while (j < contours.size() && contours[i].from + width > contours[j].from) {
           if (contours[i].y < contours[j].y) {
-            std::cout << "Error: overlap with other macros" << std::endl;
+            // std::cout << "Error: overlap with other macros" << std::endl;
             overlap = true;
             break;
           }
@@ -241,7 +242,7 @@ bool Solver1::place_macro(DIE_INDEX idx, int& x, int& y, const int width,
           if (contours[i].y < contours[j].y) {
             std::cout << "Error: overlap with other macros" << std::endl;
             overlap = true;
-            break;
+            return false;
           }
           --j;
         }
@@ -291,15 +292,22 @@ void Solver1::place_macro_on_die(DIE_INDEX idx,
     // place
     int x = 0;
     int y = 0;
-    bool success = place_macro(idx, x, y, width, height);
+    bool success = place_macro(idx, x, y, width, height, inst_name);
     // std::cout << idx << " " << inst_name << " " << x << " " << y << " "
     //           << horizontal_contours[BOTTOM].size() << std::endl;
 
     if (success) {
       std::cout << idx << " " << inst_name << " " << x << " " << y << std::endl;
-      // update spared rows
-      update_spared_rows(idx, x, y, width, height);
 
+      if (horizontal_contours[idx][horizontal_contours[idx].size() - 1].from >=
+          horizontal_contours[idx][horizontal_contours[idx].size() - 1].to) {
+          horizontal_contours[idx].pop_back();
+      }
+
+      // update spared rows
+      std::cout << "update" << std::endl;
+      update_spared_rows(idx, x, y, width, height);
+      std::cout << "done" << std::endl;
       // update
       case_.netlist.placed[inst_name] = true;
       case_.netlist.inst_top_or_bottom[inst_name] = idx;
@@ -325,8 +333,14 @@ void Solver1::update_spared_rows(DIE_INDEX idx, const int x, const int y,
   int top_row_index = (y + height) / row_height;
   int bottom_row_index = y / row_height;
 
-  if ((((y + height) % row_height) == 0) ||
-      ((y + height) > row_height * (spared_rows[idx].size()))) {
+  if ((y + height) > row_height * (spared_rows[idx].size())) {
+    if (idx == TOP) {
+      top_row_index = case_.top_die.rows.repeat_count - 1;
+    } else {
+      top_row_index = case_.bottom_die.rows.repeat_count - 1;
+    }
+  }
+  else if (((y + height) % row_height) == 0) {
     top_row_index -= 1;
   }
   if (((y % row_height) == 0) && (y != 0)) {
@@ -340,6 +354,7 @@ void Solver1::update_spared_rows(DIE_INDEX idx, const int x, const int y,
     while ((j < spared_rows[idx][i].size() - 1) && (left > spared_rows[idx][i][j].second)) {
       ++j;
     }
+
     if ((left == spared_rows[idx][i][j].first) && (right == spared_rows[idx][i][j].second)) {
       spared_rows[idx][i].erase(spared_rows[idx][i].begin() + j);
     } else if (left == spared_rows[idx][i][j].first) {
@@ -351,7 +366,11 @@ void Solver1::update_spared_rows(DIE_INDEX idx, const int x, const int y,
       new_pair.first = right;
       new_pair.second = spared_rows[idx][i][j].second;
       spared_rows[idx][i][j].second = left;
-      spared_rows[idx][i].insert(spared_rows[idx][i].begin() + j + 1, new_pair);
+      if (j == spared_rows[idx][i].size() - 1) {
+        spared_rows[idx][i].push_back(new_pair);
+      } else {
+        spared_rows[idx][i].insert(spared_rows[idx][i].begin() + j + 1, new_pair);
+      }
     }
   }
 }
@@ -502,7 +521,7 @@ void Solver1::get_inst_that_not_placed(DIE_INDEX idx, const std::vector<std::str
                             float(die_size));
         }
         else {
-          std::cerr << "Has a macro that can't be place on the top nor bottom die" << std::endl;
+          std::cerr << "Has a inst that can't be place on the top nor bottom die" << std::endl;
         }
       }
       else {
@@ -513,7 +532,7 @@ void Solver1::get_inst_that_not_placed(DIE_INDEX idx, const std::vector<std::str
                             float(die_size));
         }
         else {
-          std::cerr << "Has a macro that can't be place on the top nor bottom die" << std::endl;
+          std::cerr << "Has a inst that can't be place on the top nor bottom die" << std::endl;
         }
       }
       
@@ -597,8 +616,6 @@ void Solver1::draw_terminal(){
   draw_terminal_file.close();
 }
 
-
-
 void Solver1::solve() {
   // separate macros and cells
   std::vector<std::string> macro_C_index;
@@ -606,7 +623,7 @@ void Solver1::solve() {
   separate_macros_cells(case_.get_macro_list(), macro_C_index, cell_C_index);
 
   // macro
-  std::cout << "macro" << std::endl;
+  std::cout << "-----macro-----" << std::endl;
   // decide what die each macro should be placed
   std::vector<std::string> top_die_macros;
   std::vector<std::string> bottom_die_macros;
@@ -625,7 +642,7 @@ void Solver1::solve() {
   std::cout << "place macro" << std::endl; // error: case3: core dumped
   place_macro_on_die(TOP, top_die_macros);
   place_macro_on_die(BOTTOM, bottom_die_macros);
-  std::cout << "place macro done" << std::endl;
+  std::cout << "done" << std::endl;
 
   // get macros that are not placed
   std::vector<std::string> top_not_placed_macros;
@@ -637,18 +654,26 @@ void Solver1::solve() {
 
   // sort by (height / width)
   std::cout << "sort macro" << std::endl;
-  sort_macro(TOP, bottom_not_placed_macros);
-  sort_macro(BOTTOM, top_not_placed_macros);
+  if (!bottom_not_placed_macros.empty()) {
+    sort_macro(TOP, bottom_not_placed_macros);
+  }
+  if (!top_not_placed_macros.empty()) {
+    sort_macro(BOTTOM, top_not_placed_macros);
+  }
   std::cout << "done" << std::endl;
 
   // place them on the other die
   std::cout << "place macro" << std::endl;
-  place_macro_on_die(TOP, bottom_not_placed_macros);
-  place_macro_on_die(BOTTOM, top_not_placed_macros);
+  if (!bottom_not_placed_macros.empty()) {
+    place_macro_on_die(TOP, bottom_not_placed_macros);
+  }
+  if (!top_not_placed_macros.empty()) {
+    place_macro_on_die(BOTTOM, top_not_placed_macros);
+  }
   std::cout << "done" << std::endl;
 
   // cell
-  std::cout << "cell" << std::endl;
+  std::cout << "-----cell-----" << std::endl;
   // decide what die each cell should be placed
   std::vector<std::string> top_die_cells;
   std::vector<std::string> bottom_die_cells;
@@ -678,14 +703,22 @@ void Solver1::solve() {
 
   // sort by width
   std::cout << "sort cell" << std::endl;
-  sort_cell(TOP, bottom_not_placed_cells);
-  sort_cell(BOTTOM, top_not_placed_cells);
+  if (!bottom_not_placed_cells.empty()) {
+    sort_cell(TOP, bottom_not_placed_cells);
+  }
+  if (!top_not_placed_cells.empty()) {
+    sort_cell(BOTTOM, top_not_placed_cells);
+  }
   std::cout << "done" << std::endl;
 
   // place them on the other die
   std::cout << "place cell" << std::endl;
-  place_cell_on_die(TOP, bottom_not_placed_cells);
-  place_cell_on_die(BOTTOM, top_not_placed_cells);
+  if (!bottom_not_placed_macros.empty()) {
+    place_cell_on_die(TOP, bottom_not_placed_cells);
+  }
+  if (!top_not_placed_cells.empty()) {
+    place_cell_on_die(BOTTOM, top_not_placed_cells);
+  }
   std::cout << "done" << std::endl;
 
   // terminal

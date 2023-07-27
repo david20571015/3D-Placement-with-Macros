@@ -32,7 +32,7 @@ class Solver1 : public Solver {
                             std::vector<std::string>& bottom_die);
   void place_macro_on_die(DIE_INDEX idx,
                           const std::vector<std::string>& macros);
-  bool place_macro(DIE_INDEX idx, int& x, int& y, int width, int height);
+  bool place_macro(DIE_INDEX idx, int& x, int& y, int width, int height, std::string inst_name);
   void concat_line_segment(DIE_INDEX idx, int i);
   void sort_cell(DIE_INDEX idx, std::vector<std::string>& cell_C_index);
   void update_spared_rows(DIE_INDEX idx, int x, int y, int width, int height);
