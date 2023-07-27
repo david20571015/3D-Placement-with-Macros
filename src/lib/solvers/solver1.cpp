@@ -23,21 +23,21 @@ Solver1::Solver1(Case& case_) : Solver(case_) {
   // initialize die size and utilization
   die_size = case_.size.upper_right_x * case_.size.upper_right_y;
   const int percent = 100;
-  die_max_util = {float(case_.top_die.max_util) / percent,
-                  float(case_.bottom_die.max_util) / percent};
-  die_util = {0, 0};
+  die_max_util = {double(case_.top_die.max_util) / percent,
+                  double(case_.bottom_die.max_util) / percent};
+  die_util = {0., 0.};
 }
 
 bool Solver1::check_capacity(int index, int die_cell_index) {
   if (index == TOP) {
     return (die_util[TOP] +
-               (case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
+               double(case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
                    die_size)) <=
            die_max_util[TOP];
   }
   else{
     return (die_util[BOTTOM] +
-               (case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
+               double(case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
                    die_size)) <=
            die_max_util[BOTTOM];
   }

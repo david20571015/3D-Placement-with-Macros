@@ -7,8 +7,8 @@ class Solver1 : public Solver {
     int to;
   };
 
-  std::vector<float> die_max_util;
-  std::vector<float> die_util;
+  std::vector<double> die_max_util;
+  std::vector<double> die_util;
   std::vector<std::vector<line_segment>> horizontal_contours;
   std::vector<std::vector<std::vector<std::pair<int, int>>>> spared_rows;
   int die_size;
