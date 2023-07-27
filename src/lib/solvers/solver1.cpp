@@ -527,18 +527,17 @@ void Solver1::add_terminal(std::string net_name, int terminal_index)
 
 
 void Solver1::place_terminal() {
-  int terminal_size = case_.terminal.size_x;
-  int virtual_terminal_size = case_.terminal.size_x + case_.terminal.spacing;
-  int max_num_x = case_.size.upper_right_x / virtual_terminal_size;
-  int max_num_y = case_.size.upper_right_y / virtual_terminal_size;
+
   int index = 0;
 
   //place terminal
   for(auto& n : case_.netlist.nets){
     bool status_TOP = false;
     bool status_BOTTOM = false;
-    for(auto& inst : case_.netlist.inst_top_or_bottom){
-      if(inst.second == TOP){
+    for(auto& pin : n.pins){
+      std::string inst_name = pin.first;
+      int pre_status = case_.netlist.inst_top_or_bottom[inst_name];
+      if(pre_status == TOP){
         status_TOP = true;
       }
       else{
@@ -547,6 +546,8 @@ void Solver1::place_terminal() {
       //both die have this net
       if(status_TOP && status_BOTTOM){
         add_terminal(n.name, index);
+        std::cout << "n.name" << n.name << std::endl;
+        std::cout << "index" << index << std::endl;
         index ++;
         break;
       }
