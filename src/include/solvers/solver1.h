@@ -38,6 +38,8 @@ class Solver1 : public Solver {
   void get_inst_that_not_placed(DIE_INDEX idx, const std::vector<std::string>& inst_C_index
                                 , std::vector<std::string>& not_placed);
   void place_terminal();
+  void add_terminal(std::string net_name, int);
 
   void draw_macro();
+  void draw_terminal();
 };

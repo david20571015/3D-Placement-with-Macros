@@ -487,9 +487,88 @@ void Solver1::get_inst_that_not_placed(DIE_INDEX idx, const std::vector<std::str
   }
 }
 
-void Solver1::place_terminal() {
-  // to-do
+void Solver1::add_terminal(std::string net_name, int terminal_index)
+{
+  int terminal_size = case_.terminal.size_x;
+  int virtual_terminal_size = case_.terminal.size_x + case_.terminal.spacing;
+
+  int virtual_max_width = case_.size.upper_right_x - 2*case_.terminal.spacing;
+  int virtual_max_height = case_.size.upper_right_y - 2*case_.terminal.spacing;
+
+  int max_num_x;
+  int max_num_y;
+
+  int terminal_row_index;
+  int terminal_col_index;
+
+
+  max_num_x = virtual_max_width / virtual_terminal_size;
+  if(terminal_size <= virtual_max_width % virtual_terminal_size)
+    max_num_x ++;
+  max_num_y = virtual_max_height / virtual_terminal_size;
+  if(terminal_size <= virtual_max_height % virtual_terminal_size)
+    max_num_y ++;
+  std::cout << "max_num_x: " << max_num_x << std::endl;
+  std::cout << "max_num_y: " << max_num_y << std::endl;
+
+
+  terminal_col_index = terminal_index % max_num_x;
+  terminal_row_index = terminal_index / max_num_x;
+
+
+  
+  SoluTerminal t;
+  t.net_name = net_name;
+  t.loc_x = case_.terminal.spacing + terminal_col_index * virtual_terminal_size;
+  t.loc_y = case_.terminal.spacing + terminal_row_index * virtual_terminal_size;
+  solution_.terminals.push_back(t);
+
 }
+
+
+void Solver1::place_terminal() {
+  int terminal_size = case_.terminal.size_x;
+  int virtual_terminal_size = case_.terminal.size_x + case_.terminal.spacing;
+  int max_num_x = case_.size.upper_right_x / virtual_terminal_size;
+  int max_num_y = case_.size.upper_right_y / virtual_terminal_size;
+  int index = 0;
+
+  //place terminal
+  for(auto& n : case_.netlist.nets){
+    bool status_TOP = false;
+    bool status_BOTTOM = false;
+    for(auto& inst : case_.netlist.inst_top_or_bottom){
+      if(inst.second == TOP){
+        status_TOP = true;
+      }
+      else{
+        status_BOTTOM = true;
+      }
+      //both die have this net
+      if(status_TOP && status_BOTTOM){
+        add_terminal(n.name, index);
+        index ++;
+        break;
+      }
+    }
+  }
+}
+
+void Solver1::draw_terminal(){
+  std::ofstream draw_terminal_file;
+  draw_terminal_file.open(std::string("draw_terminal.txt"));
+  draw_terminal_file << solution_.terminals.size() << std::endl;
+  draw_terminal_file << case_.size.upper_right_x << " "  << case_.size.upper_right_y << std::endl;
+  int count = 1;
+  for(auto& t : solution_.terminals){
+    draw_terminal_file << count << " " << t.loc_x << " " << t.loc_y << " " << case_.terminal.size_x  << " " << case_.terminal.size_x << std::endl;
+    count++;
+  }
+  draw_terminal_file.close();
+
+}
+
+
 
 void Solver1::solve() {
   // separate macros and cells
@@ -560,7 +639,9 @@ void Solver1::solve() {
 
   // terminal
   place_terminal();
-
-  //draw macro
+  
+  //draw macro and cell 
   draw_macro();
+  //draw terminal
+  draw_terminal();
 }
