@@ -31,15 +31,13 @@ Solver1::Solver1(Case& case_) : Solver(case_) {
 bool Solver1::check_capacity(int index, int die_cell_index) {
   if (index == TOP) {
     return (die_util[TOP] +
-               double(case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
-                   die_size)) <
-           die_max_util[TOP];
+               double(case_.top_die.tech.lib_cells[die_cell_index].get_cell_size()) /
+                   die_size) < die_max_util[TOP];
   }
   else{
     return (die_util[BOTTOM] +
-               double(case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
-                   die_size)) <
-           die_max_util[BOTTOM];
+               double(case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size()) /
+                   die_size) < die_max_util[BOTTOM];
   }
 }
 
@@ -305,9 +303,9 @@ void Solver1::place_macro_on_die(DIE_INDEX idx,
       }
 
       // update spared rows
-      std::cout << "update" << std::endl;
+      // std::cout << "update" << std::endl;
       update_spared_rows(idx, x, y, width, height);
-      std::cout << "done" << std::endl;
+      // std::cout << "done" << std::endl;
       // update
       case_.netlist.placed[inst_name] = true;
       case_.netlist.inst_top_or_bottom[inst_name] = idx;
@@ -418,7 +416,7 @@ void Solver1::place_cell_on_die(DIE_INDEX idx,
     // std::cout << idx << " " << inst_name << " " << x << " " << y << std::endl;
 
     if (success) {
-      // std::cout << idx << " " << inst_name << " " << x << " " << y << std::endl;
+      std::cout << idx << " " << inst_name << " " << x << " " << y << std::endl;
       // update
       case_.netlist.placed[inst_name] = true;
       case_.netlist.inst_top_or_bottom[inst_name] = idx;
@@ -515,10 +513,10 @@ void Solver1::get_inst_that_not_placed(DIE_INDEX idx, const std::vector<std::str
 
       if (idx == TOP){
         die_util[idx] -= (case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
-                            float(die_size));
+                            double(die_size));
         if (check_capacity(BOTTOM, die_cell_index)){
           die_util[BOTTOM] += (case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
-                            float(die_size));
+                            double(die_size));
         }
         else {
           std::cerr << "Has a inst that can't be place on the top nor bottom die" << std::endl;
@@ -526,10 +524,10 @@ void Solver1::get_inst_that_not_placed(DIE_INDEX idx, const std::vector<std::str
       }
       else {
         die_util[idx] -= (case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
-                            float(die_size));
+                            double(die_size));
         if (check_capacity(TOP, die_cell_index)){
           die_util[TOP] += (case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
-                            float(die_size));
+                            double(die_size));
         }
         else {
           std::cerr << "Has a inst that can't be place on the top nor bottom die" << std::endl;
