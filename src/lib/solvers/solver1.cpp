@@ -32,13 +32,13 @@ bool Solver1::check_capacity(int index, int die_cell_index) {
   if (index == TOP) {
     return (die_util[TOP] +
                double(case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
-                   die_size)) <=
+                   die_size)) <
            die_max_util[TOP];
   }
   else{
     return (die_util[BOTTOM] +
                double(case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
-                   die_size)) <=
+                   die_size)) <
            die_max_util[BOTTOM];
   }
 }
