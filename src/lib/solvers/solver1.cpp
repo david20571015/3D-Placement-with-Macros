@@ -6,6 +6,8 @@
 
 #include "fstream"
 
+#include <set>
+
 Solver1::Solver1(Case& case_) : Solver(case_) {
   // initialize horizontal contours for top and bottom die (macros)
   horizontal_contours = {{{0, 0, case_.size.upper_right_x}},
@@ -119,8 +121,40 @@ void Solver1::decide_what_die(const std::vector<std::string>& inst_C_index,
           float(die_size));
       bottom_die.push_back(inst_name);
     } else {
-      std::cerr << "Die utilization exceeds maximum utilization" << std::endl;
+      std::cerr << "Macro: Die utilization exceeds maximum utilization" << std::endl;
       return;
+    }
+  }
+}
+
+void Solver1::decide_what_die_cell(const std::vector<std::string>& inst_C_index,
+                                    std::vector<std::string>& top_die,
+                                    std::vector<std::string>& bottom_die) {
+  std::set<std::string> decided;
+
+  for (auto& net: case_.netlist.nets) {
+    for (auto& pin: net.pins) {
+      std::string inst_name = pin.first;
+      if (!decided.count(inst_name)) {
+        const std::string inst_type = case_.netlist.inst[inst_name];
+        const int die_cell_index = case_.get_cell_index(inst_type);
+        if (check_capacity(TOP, die_cell_index)) {
+          die_util[TOP] +=
+              (case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
+              float(die_size));
+          top_die.push_back(inst_name);
+          decided.insert(inst_name);
+        } else if(check_capacity(BOTTOM, die_cell_index)){
+          die_util[BOTTOM] +=
+              (case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
+              float(die_size));
+          bottom_die.push_back(inst_name);
+          decided.insert(inst_name);
+        } else {
+          std::cerr << "Cell: Die utilization exceeds maximum utilization" << std::endl;
+          return;
+        }
+      }
     }
   }
 }
@@ -133,7 +167,7 @@ void Solver1::concat_line_segment(DIE_INDEX idx, int i) {
     --i;  // adjust the index
   }
   if ((i < contours.size() - 1) && (contours[i + 1].y == contours[i].y)) {
-    std::cout << 'a' << std::endl;
+    // std::cout << 'a' << std::endl;
     contours[i].to = contours[i + 1].to;
     contours.erase(contours.begin() + i + 1);
   }
@@ -487,13 +521,12 @@ void Solver1::get_inst_that_not_placed(DIE_INDEX idx, const std::vector<std::str
   }
 }
 
-void Solver1::add_terminal(std::string net_name, int terminal_index)
-{
+void Solver1::add_terminal(std::string net_name, int terminal_index) {
   int terminal_size = case_.terminal.size_x;
   int virtual_terminal_size = case_.terminal.size_x + case_.terminal.spacing;
 
-  int virtual_max_width = case_.size.upper_right_x - 2*case_.terminal.spacing;
-  int virtual_max_height = case_.size.upper_right_y - 2*case_.terminal.spacing;
+  int virtual_max_width = case_.size.upper_right_x - 2 * case_.terminal.spacing;
+  int virtual_max_height = case_.size.upper_right_y - 2 * case_.terminal.spacing;
 
   int max_num_x;
   int max_num_y;
@@ -501,33 +534,28 @@ void Solver1::add_terminal(std::string net_name, int terminal_index)
   int terminal_row_index;
   int terminal_col_index;
 
-
   max_num_x = virtual_max_width / virtual_terminal_size;
-  if(terminal_size <= virtual_max_width % virtual_terminal_size)
-    max_num_x ++;
+  if(terminal_size <= (virtual_max_width % virtual_terminal_size))
+    max_num_x++;
   max_num_y = virtual_max_height / virtual_terminal_size;
-  if(terminal_size <= virtual_max_height % virtual_terminal_size)
-    max_num_y ++;
+  if(terminal_size <= (virtual_max_height % virtual_terminal_size))
+    max_num_y++;
+
   std::cout << "max_num_x: " << max_num_x << std::endl;
   std::cout << "max_num_y: " << max_num_y << std::endl;
 
-
   terminal_col_index = terminal_index % max_num_x;
   terminal_row_index = terminal_index / max_num_x;
-
-
   
   SoluTerminal t;
   t.net_name = net_name;
   t.loc_x = case_.terminal.spacing + terminal_col_index * virtual_terminal_size;
   t.loc_y = case_.terminal.spacing + terminal_row_index * virtual_terminal_size;
   solution_.terminals.push_back(t);
-
 }
 
 
 void Solver1::place_terminal() {
-
   int index = 0;
 
   //place terminal
@@ -565,8 +593,8 @@ void Solver1::draw_terminal(){
     draw_terminal_file << count << " " << t.loc_x << " " << t.loc_y << " " << case_.terminal.size_x  << " " << case_.terminal.size_x << std::endl;
     count++;
   }
-  draw_terminal_file.close();
 
+  draw_terminal_file.close();
 }
 
 
@@ -582,12 +610,16 @@ void Solver1::solve() {
   // decide what die each macro should be placed
   std::vector<std::string> top_die_macros;
   std::vector<std::string> bottom_die_macros;
-  decide_what_die(macro_C_index, top_die_macros, bottom_die_macros); 
+  std::cout << "decide what die" << std::endl;
+  decide_what_die(macro_C_index, top_die_macros, bottom_die_macros);
+  std::cout << "done" << std::endl;
   // error: case2: there are macros that can't be placed on the top nor bottom die
 
   // sort by (height / width)
+  std::cout << "sort macro" << std::endl;
   sort_macro(TOP, top_die_macros);
   sort_macro(BOTTOM, bottom_die_macros);
+  std::cout << "done" << std::endl;
 
   // place macros on the top and bottom die
   std::cout << "place macro" << std::endl; // error: case3: core dumped
@@ -598,45 +630,63 @@ void Solver1::solve() {
   // get macros that are not placed
   std::vector<std::string> top_not_placed_macros;
   std::vector<std::string> bottom_not_placed_macros;
+  std::cout << "get macros that were not placed" << std::endl;
   get_inst_that_not_placed(TOP, top_die_macros, top_not_placed_macros);
   get_inst_that_not_placed(BOTTOM, bottom_die_macros, bottom_not_placed_macros);
+  std::cout << "done" << std::endl;
 
   // sort by (height / width)
+  std::cout << "sort macro" << std::endl;
   sort_macro(TOP, bottom_not_placed_macros);
   sort_macro(BOTTOM, top_not_placed_macros);
+  std::cout << "done" << std::endl;
 
   // place them on the other die
+  std::cout << "place macro" << std::endl;
   place_macro_on_die(TOP, bottom_not_placed_macros);
   place_macro_on_die(BOTTOM, top_not_placed_macros);
+  std::cout << "done" << std::endl;
 
   // cell
   std::cout << "cell" << std::endl;
   // decide what die each cell should be placed
   std::vector<std::string> top_die_cells;
   std::vector<std::string> bottom_die_cells;
-  decide_what_die(cell_C_index, top_die_cells, bottom_die_cells);
+  std::cout << "decide what die" << std::endl;
+  decide_what_die_cell(cell_C_index, top_die_cells, bottom_die_cells);
+  std::cout << "done" << std::endl;
 
   // sort by width
+  std::cout << "sort cell" << std::endl;
   sort_cell(TOP, top_die_cells);
   sort_cell(BOTTOM, bottom_die_cells);
+  std::cout << "done" << std::endl;
 
   // place cells on the top and bottom die
+  std::cout << "place cell" << std::endl;
   place_cell_on_die(TOP, top_die_cells);
   place_cell_on_die(BOTTOM, bottom_die_cells);
+  std::cout << "done" << std::endl;
 
   // get cells that are not placed
   std::vector<std::string> top_not_placed_cells;
   std::vector<std::string> bottom_not_placed_cells;
+  std::cout << "get cells that were not placed" << std::endl;
   get_inst_that_not_placed(TOP, top_die_cells, top_not_placed_cells);
   get_inst_that_not_placed(BOTTOM, bottom_die_cells, bottom_not_placed_cells);
+  std::cout << "done" << std::endl;
 
   // sort by width
+  std::cout << "sort cell" << std::endl;
   sort_cell(TOP, bottom_not_placed_cells);
   sort_cell(BOTTOM, top_not_placed_cells);
+  std::cout << "done" << std::endl;
 
   // place them on the other die
+  std::cout << "place cell" << std::endl;
   place_cell_on_die(TOP, bottom_not_placed_cells);
   place_cell_on_die(BOTTOM, top_not_placed_cells);
+  std::cout << "done" << std::endl;
 
   // terminal
   place_terminal();
