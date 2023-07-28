@@ -2,7 +2,6 @@
 
 #include "data/case.h"
 #include "solvers/solver1.h"
-#include "data/netlist.h"
 
 int main(int argc, char** argv) {
   std::ios_base::sync_with_stdio(false);

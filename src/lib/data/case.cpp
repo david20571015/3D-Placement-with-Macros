@@ -37,10 +37,9 @@ int Case::get_die_row_width(int die_index) const {
                           : bottom_die.rows.row_length;
 }
 
-int Case::get_is_macro(int die_index, int lib_cell_index) const {
-  return (die_index == 0)
-             ? top_die.tech.lib_cells[lib_cell_index].is_macro
-             : bottom_die.tech.lib_cells[lib_cell_index].is_macro;
+bool Case::get_is_macro(int die_index, int lib_cell_index) const {
+  return (die_index == 0) ? top_die.tech.lib_cells[lib_cell_index].is_macro
+                          : bottom_die.tech.lib_cells[lib_cell_index].is_macro;
 }
 
 std::istream& operator>>(std::istream& input, Case& case_) {

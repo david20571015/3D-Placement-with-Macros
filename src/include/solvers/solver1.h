@@ -32,16 +32,19 @@ class Solver1 : public Solver {
                             std::vector<std::string>& bottom_die);
   void place_macro_on_die(DIE_INDEX idx,
                           const std::vector<std::string>& macros);
-  bool place_macro(DIE_INDEX idx, int& x, int& y, int width, int height, std::string inst_name);
-  void concat_line_segment(DIE_INDEX idx, int i);
+  bool place_macro(DIE_INDEX idx, int& x, int& y, int width, int height,
+                   const std::string& inst_name);
+  void concat_line_segment(DIE_INDEX idx, size_t i);
   void sort_cell(DIE_INDEX idx, std::vector<std::string>& cell_C_index);
-  void update_spared_rows(DIE_INDEX idx, int x, int y, int width, int height);
+  void update_spared_rows(DIE_INDEX idx, int x, size_t y, int width,
+                          int height);
   void place_cell_on_die(DIE_INDEX idx, const std::vector<std::string>& cells);
   bool place_cell(DIE_INDEX idx, int& x, int& y, int width, int height);
-  void get_inst_that_not_placed(DIE_INDEX idx, const std::vector<std::string>& inst_C_index
-                                , std::vector<std::string>& not_placed);
+  void get_inst_that_not_placed(DIE_INDEX idx,
+                                const std::vector<std::string>& inst_C_index,
+                                std::vector<std::string>& not_placed);
   void place_terminal();
-  void add_terminal(std::string net_name, int);
+  void add_terminal(std::string net_name, int terminal_index);
 
   void draw_macro();
   void draw_terminal();
