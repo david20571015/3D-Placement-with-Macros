@@ -299,6 +299,8 @@ void Solver1::place_macro_on_die(DIE_INDEX idx,
     //           << horizontal_contours[BOTTOM].size() << std::endl;
 
     if (success) {
+      // reverese the placement of macro
+      y = case_.size.upper_right_y - y - height;
       std::cout << idx << " " << inst_name << " " << x << " " << y << std::endl;
 
       if (horizontal_contours[idx][horizontal_contours[idx].size() - 1].from >=
@@ -336,11 +338,7 @@ void Solver1::update_spared_rows(DIE_INDEX idx, const int x, const size_t y,
   int bottom_row_index = y / row_height;
 
   if ((y + height) > row_height * (spared_rows[idx].size())) {
-    if (idx == TOP) {
-      top_row_index = case_.top_die.rows.repeat_count - 1;
-    } else {
-      top_row_index = case_.bottom_die.rows.repeat_count - 1;
-    }
+    top_row_index = spared_rows[idx].size() - 1;
   } else if (((y + height) % row_height) == 0) {
     top_row_index -= 1;
   }
@@ -697,7 +695,7 @@ void Solver1::solve() {
   std::cout << "done" << std::endl;
 
   // place macros on the top and bottom die
-  std::cout << "place macro" << std::endl;  // error: case3: core dumped
+  std::cout << "place macro" << std::endl;
   place_macro_on_die(TOP, top_die_macros);
   place_macro_on_die(BOTTOM, bottom_die_macros);
   std::cout << "done" << std::endl;
