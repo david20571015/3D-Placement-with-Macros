@@ -48,4 +48,6 @@ class Solver1 : public Solver {
 
   void draw_macro();
   void draw_terminal();
+
+  bool check_macro_numbers(int);
 };

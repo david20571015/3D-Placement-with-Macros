@@ -661,12 +661,24 @@ void Solver1::draw_terminal() {
   draw_terminal_file.close();
 }
 
+bool Solver1::check_macro_numbers(int macro_numbers){
+  std::cout << "top_die_insts.size() : " << solution_.top_die_insts.size() << std::endl;
+  std::cout << "bottom_die_insts.size() : " << solution_.bottom_die_insts.size() << std::endl;
+  if(solution_.top_die_insts.size() + solution_.bottom_die_insts.size() == macro_numbers){
+    return true;
+  }
+  else{
+    return false;
+  }
+}
+
 void Solver1::solve() {
   // separate macros and cells
   std::vector<std::string> macro_C_index;
   std::vector<std::string> cell_C_index;
   separate_macros_cells(case_.get_macro_list(), macro_C_index, cell_C_index);
-
+  // std::cout << "macro_C_index.size() : " << macro_C_index.size() << std::endl;
+  
   // macro
   std::cout << "-----macro-----" << std::endl;
   // decide what die each macro should be placed
@@ -716,6 +728,14 @@ void Solver1::solve() {
   if (!top_not_placed_macros.empty()) {
     place_macro_on_die(BOTTOM, top_not_placed_macros);
   }
+  std::cout << "done" << std::endl;
+  
+  //check macros
+  std::cout << "check macros" << std::endl;
+  if(check_macro_numbers(macro_C_index.size()))
+    std::cout << "macros numbers are correct" << std::endl;
+  else
+    std::cout << "macros numbers are not correct" << std::endl;
   std::cout << "done" << std::endl;
 
   // cell
@@ -776,4 +796,5 @@ void Solver1::solve() {
   draw_macro();
   // draw terminal
   draw_terminal();
+
 }
