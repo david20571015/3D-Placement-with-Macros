@@ -588,24 +588,24 @@ void Solver1::add_terminal(std::string net_name, int terminal_index) {
   int terminal_col_index;
 
   max_num_x = virtual_max_width / virtual_terminal_size;
-  if (terminal_size <= (virtual_max_width % virtual_terminal_size)) {
+  if (terminal_size <= (virtual_max_width % virtual_terminal_size) - 0.5) {
     max_num_x++;
   }
   max_num_y = virtual_max_height / virtual_terminal_size;
-  if (terminal_size <= (virtual_max_height % virtual_terminal_size)) {
+  if (terminal_size <= (virtual_max_height % virtual_terminal_size) - 0.5) {
     max_num_y++;
   }
 
-  std::cout << "max_num_x: " << max_num_x << std::endl;
-  std::cout << "max_num_y: " << max_num_y << std::endl;
+  // std::cout << "max_num_x: " << max_num_x << std::endl;
+  // std::cout << "max_num_y: " << max_num_y << std::endl;
 
   terminal_col_index = terminal_index % max_num_x;
   terminal_row_index = terminal_index / max_num_x;
 
   SoluTerminal t;
   t.net_name = net_name;
-  t.loc_x = case_.terminal.spacing + terminal_col_index * virtual_terminal_size;
-  t.loc_y = case_.terminal.spacing + terminal_row_index * virtual_terminal_size;
+  t.loc_x = case_.terminal.spacing + terminal_col_index * virtual_terminal_size + terminal_size / 2;
+  t.loc_y = case_.terminal.spacing + terminal_row_index * virtual_terminal_size + terminal_size / 2;
   solution_.terminals.push_back(t);
 }
 
@@ -627,11 +627,19 @@ void Solver1::place_terminal() {
       // both die have this net
       if (status_TOP && status_BOTTOM) {
         add_terminal(net.name, index);
-        std::cout << "net.name" << net.name << std::endl;
-        std::cout << "index" << index << std::endl;
+        // std::cout << "net.name " << net.name << std::endl;
+        // std::cout << "index " << index << std::endl;
         index++;
         break;
       }
+    }
+  }
+
+  // check terminal size even or odd
+  if (case_.terminal.size_x % 2 == 1){
+    for (auto& t : solution_.terminals) {
+      t.loc_x ++;
+      t.loc_y ++;
     }
   }
 }
@@ -760,7 +768,9 @@ void Solver1::solve() {
   std::cout << "done" << std::endl;
 
   // terminal
+  std::cout << "place terminal" << std::endl;
   place_terminal();
+  std::cout << "done" << std::endl;
 
   // draw macro and cell
   draw_macro();
