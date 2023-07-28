@@ -14,7 +14,7 @@ test_%: cases/%.txt cases/%.out
 	@$(EVALUATOR) $^
 
 %.out: %.txt $(EXEC_PATH)
-	./$(EXEC_PATH) $< $@
+	./$(EXEC_PATH) $< $@ >/dev/null 2>&1
 
 .PHONY: clean
 clean:
