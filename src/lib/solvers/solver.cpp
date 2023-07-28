@@ -32,12 +32,14 @@ std::ostream& operator<<(std::ostream& output, SoluTerminal& terminal) {
 }
 
 std::ostream& operator<<(std::ostream& output, Solution& solution) {
-  output << "TopDiePlacement " << solution.top_die_insts.size() << '\n';
-  for (auto& inst : solution.top_die_insts) {
+  output << "TopDiePlacement "
+         << solution.die_insts[Solution::DieSide::TOP].size() << '\n';
+  for (auto& inst : solution.die_insts[Solution::DieSide::TOP]) {
     output << inst;
   }
-  output << "BottomDiePlacement " << solution.bottom_die_insts.size() << '\n';
-  for (auto& inst : solution.bottom_die_insts) {
+  output << "BottomDiePlacement "
+         << solution.die_insts[Solution::DieSide::BOTTOM].size() << '\n';
+  for (auto& inst : solution.die_insts[Solution::DieSide::BOTTOM]) {
     output << inst;
   }
   output << "NumTerminals " << solution.terminals.size() << '\n';
@@ -46,7 +48,5 @@ std::ostream& operator<<(std::ostream& output, Solution& solution) {
   }
   return output;
 }
-
-Solver::Solver(Case& case_) : case_(std::move(case_)) {}
 
 void Solver::dump(std::ostream& output) { output << solution_; }

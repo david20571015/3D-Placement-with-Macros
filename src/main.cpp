@@ -1,14 +1,13 @@
+#include <ctime>
 #include <fstream>
+#include <utility>
 
 #include "data/case.h"
 #include "solvers/solver1.h"
 
-#include <time.h>
-
 int main(int argc, char** argv) {
-  //run time
-  clock_t start, end;
-  start = clock();
+  // run time
+  const clock_t start = clock();
 
   std::ios_base::sync_with_stdio(false);
   std::cin.tie(nullptr);
@@ -22,13 +21,15 @@ int main(int argc, char** argv) {
 
   Case case_;
   in_file >> case_;
-  Solver1 solver(case_);
+  Solver1 solver(std::move(case_));
 
   solver.solve();
 
   std::ofstream out_file(argv[2]);
   solver.dump(out_file);
-  end = clock();
-  std::cout << "Run Times: " << (double)(end - start) / CLOCKS_PER_SEC << "s" << std::endl;
+  const clock_t end = clock();
+  std::cout << "Run Times: "
+            << static_cast<double>(end - start) / CLOCKS_PER_SEC << "s"
+            << std::endl;
   return 0;
 }

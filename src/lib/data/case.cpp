@@ -5,7 +5,7 @@
 std::vector<std::string> Case::get_macro_list() const {
   std::vector<std::string> macro_list;
 
-  for (const auto& lib_cell : top_die.tech.lib_cells) {
+  for (const auto& lib_cell : die_infos[TOP].tech.lib_cells) {
     if (lib_cell.is_macro) {
       macro_list.push_back(lib_cell.name);
     }
@@ -15,31 +15,30 @@ std::vector<std::string> Case::get_macro_list() const {
 }
 
 int Case::get_cell_index(const std::string& type) const {
-  return top_die.tech.get_lib_cell_index(type);
+  return die_infos[TOP].tech.get_lib_cell_index(type);
 }
 
-int Case::get_lib_cell_width(int die_index, int lib_cell_index) const {
-  return (die_index == 0) ? top_die.tech.lib_cells[lib_cell_index].size.x
-                          : bottom_die.tech.lib_cells[lib_cell_index].size.x;
+int Case::get_lib_cell_width(DieSide side, int lib_cell_index) const {
+  return die_infos[side].tech.lib_cells[lib_cell_index].size.x;
 };
 
-int Case::get_lib_cell_height(int die_index, int lib_cell_index) const {
-  return (die_index == 0) ? top_die.tech.lib_cells[lib_cell_index].size.y
-                          : bottom_die.tech.lib_cells[lib_cell_index].size.y;
+int Case::get_lib_cell_height(DieSide side, int lib_cell_index) const {
+  return die_infos[side].tech.lib_cells[lib_cell_index].size.y;
 };
 
-int Case::get_die_row_height(int die_index) const {
-  return (die_index == 0) ? top_die.rows.row_height
-                          : bottom_die.rows.row_height;
+int Case::get_lib_cell_size(DieSide side, int lib_cell_index) const {
+  return die_infos[side].tech.lib_cells[lib_cell_index].get_cell_size();
+};
+
+int Case::get_die_row_height(DieSide side) const {
+  return die_infos[side].rows.row_height;
 }
-int Case::get_die_row_width(int die_index) const {
-  return (die_index == 0) ? top_die.rows.row_length
-                          : bottom_die.rows.row_length;
+int Case::get_die_row_width(DieSide side) const {
+  return die_infos[side].rows.row_length;
 }
 
-bool Case::get_is_macro(int die_index, int lib_cell_index) const {
-  return (die_index == 0) ? top_die.tech.lib_cells[lib_cell_index].is_macro
-                          : bottom_die.tech.lib_cells[lib_cell_index].is_macro;
+bool Case::get_is_macro(DieSide side, int lib_cell_index) const {
+  return die_infos[side].tech.lib_cells[lib_cell_index].is_macro;
 }
 
 std::istream& operator>>(std::istream& input, Case& case_) {
@@ -58,18 +57,22 @@ std::istream& operator>>(std::istream& input, Case& case_) {
       case_.size.upper_right_x >> case_.size.upper_right_y;
 
   input >> dummy;
-  input >> case_.top_die.max_util;
+  input >> case_.die_infos[Case::DieSide::TOP].max_util;
   input >> dummy;
-  input >> case_.bottom_die.max_util;
+  input >> case_.die_infos[Case::DieSide::BOTTOM].max_util;
 
   input >> dummy;
-  input >> case_.top_die.rows.start_x >> case_.top_die.rows.start_y >>
-      case_.top_die.rows.row_length >> case_.top_die.rows.row_height >>
-      case_.top_die.rows.repeat_count;
+  input >> case_.die_infos[Case::DieSide::TOP].rows.start_x >>
+      case_.die_infos[Case::DieSide::TOP].rows.start_y >>
+      case_.die_infos[Case::DieSide::TOP].rows.row_length >>
+      case_.die_infos[Case::DieSide::TOP].rows.row_height >>
+      case_.die_infos[Case::DieSide::TOP].rows.repeat_count;
   input >> dummy;
-  input >> case_.bottom_die.rows.start_x >> case_.bottom_die.rows.start_y >>
-      case_.bottom_die.rows.row_length >> case_.bottom_die.rows.row_height >>
-      case_.bottom_die.rows.repeat_count;
+  input >> case_.die_infos[Case::DieSide::BOTTOM].rows.start_x >>
+      case_.die_infos[Case::DieSide::BOTTOM].rows.start_y >>
+      case_.die_infos[Case::DieSide::BOTTOM].rows.row_length >>
+      case_.die_infos[Case::DieSide::BOTTOM].rows.row_height >>
+      case_.die_infos[Case::DieSide::BOTTOM].rows.repeat_count;
 
   std::string top_tech_name;
   std::string bottom_tech_name;
@@ -78,10 +81,10 @@ std::istream& operator>>(std::istream& input, Case& case_) {
 
   for (auto& tech : techs) {
     if (tech.tech_name == top_tech_name) {
-      case_.top_die.tech = tech;
+      case_.die_infos[Case::DieSide::TOP].tech = tech;
     }
     if (tech.tech_name == bottom_tech_name) {
-      case_.bottom_die.tech = tech;
+      case_.die_infos[Case::DieSide::BOTTOM].tech = tech;
     }
   }
 
