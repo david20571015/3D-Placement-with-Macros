@@ -732,10 +732,13 @@ void Solver1::solve() {
   
   //check macros
   std::cout << "check macros" << std::endl;
-  if(check_macro_numbers(macro_C_index.size()))
+  if(check_macro_numbers(macro_C_index.size())){
     std::cout << "macros numbers are correct" << std::endl;
-  else
+  }
+  else{
     std::cout << "macros numbers are not correct" << std::endl;
+  }
+
   std::cout << "done" << std::endl;
 
   // cell
