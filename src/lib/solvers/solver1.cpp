@@ -111,12 +111,12 @@ void Solver1::decide_what_die(const std::vector<std::string>& inst_C_index,
     if ((alter) && (check_capacity(TOP, die_cell_index))) {
       die_util[TOP] +=
           (case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
-           static_cast<float>(die_size));
+           static_cast<double>(die_size));
       top_die.push_back(inst_name);
     } else if ((!alter) && (check_capacity(BOTTOM, die_cell_index))) {
       die_util[BOTTOM] +=
           (case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
-           static_cast<float>(die_size));
+           static_cast<double>(die_size));
       bottom_die.push_back(inst_name);
     } else {
       std::cerr << "Macro: Die utilization exceeds maximum utilization"
@@ -143,13 +143,13 @@ void Solver1::decide_what_die_cell(const std::vector<std::string>& inst_C_index,
         if (check_capacity(TOP, die_cell_index)) {
           die_util[TOP] +=
               (case_.top_die.tech.lib_cells[die_cell_index].get_cell_size() /
-               static_cast<float>(die_size));
+               static_cast<double>(die_size));
           top_die.push_back(inst_name);
           decided.insert(inst_name);
         } else if (check_capacity(BOTTOM, die_cell_index)) {
           die_util[BOTTOM] +=
               (case_.bottom_die.tech.lib_cells[die_cell_index].get_cell_size() /
-               static_cast<float>(die_size));
+               static_cast<double>(die_size));
           bottom_die.push_back(inst_name);
           decided.insert(inst_name);
         } else {
@@ -423,7 +423,7 @@ void Solver1::place_cell_on_die(DIE_INDEX idx,
     // std::endl;
 
     if (success) {
-      std::cout << idx << " " << inst_name << " " << x << " " << y << std::endl;
+      // std::cout << idx << " " << inst_name << " " << x << " " << y << std::endl;
       // update
       case_.netlist.placed[inst_name] = true;
       case_.netlist.inst_top_or_bottom[inst_name] = idx;
@@ -661,7 +661,7 @@ void Solver1::draw_terminal() {
   draw_terminal_file.close();
 }
 
-bool Solver1::check_macro_numbers(int macro_numbers){
+bool Solver1::check_macro_numbers(const int macro_numbers){
   std::cout << "top_die_insts.size() : " << solution_.top_die_insts.size() << std::endl;
   std::cout << "bottom_die_insts.size() : " << solution_.bottom_die_insts.size() << std::endl;
   if(solution_.top_die_insts.size() + solution_.bottom_die_insts.size() == macro_numbers){
