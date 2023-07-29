@@ -1,5 +1,5 @@
 #include "solvers/solver1.h"
-
+#include"solvers/btree.h"
 #include <algorithm>
 #include <array>
 #include <fstream>
@@ -620,6 +620,130 @@ bool Solver1::check_macro_numbers(size_t macro_numbers) {
              solution_.die_insts[DieSide::BOTTOM].size() ==
          macro_numbers;
 }
+
+
+void Solver1::Btree_place_macro(Btree &btree, DieSide side, std::vector<std::string> die_macros, int die_width, int die_height){
+    double diff_time = 0;
+    std::string trash;
+    // clock_t st, ed;
+    clock_t lim_start, lim_end;
+    // st = clock();
+    // srand(time(NULL));
+    
+	// fstream fin, fin2, fout;
+  //   fin.open(argv[2], ios::in);
+    
+	// fin >> trash >> limx >> limy;
+  //   fin >> trash >> n >> trash >> m;
+    const int limx = die_width;
+    const int limy = die_height;
+    const int macros_number = die_macros.size();
+    
+    
+    
+	for (int i = 1 ; i <= macros_number ; ++i) {
+        //macro name
+        std::string s; 
+        // fin >> s >> pr[i].first >> pr[i].second;
+        s =  die_macros[i-1];
+        const std::string& inst_type = case_.netlist.inst[s];
+        const int die_cell_index = case_.get_cell_index(inst_type);
+        int width = case_.get_lib_cell_width(side, die_cell_index);
+        int height = case_.get_lib_cell_height(side, die_cell_index);
+        
+        btree.pr[i].first = width;
+        btree.pr[i].second = height;
+        //cout << s << endl;
+        btree.block_name[i] = s;
+        btree.mp[s] = i;
+        btree.tot_area += btree.pr[i].first * btree.pr[i].second;
+    }
+    
+	// for (int i = n + 1 ; i <= n + m ; ++i) {
+  //       string s;
+  //       fin >> s >> trash >> pr[i].first >> pr[i].second;
+  //       x[i] = rx[i] = pr[i].first;
+  //       y[i] = ry[i] = pr[i].second;
+  //       mp[s] = i;
+  //   }
+    
+	// best_area = INT_MAX;
+  //   fin2.open(argv[3], ios::in);
+  //   fin2 >> trash >> netnum;
+  //   alpha = stod(argv[1]);
+    
+	// for(int i = 0; i < netnum; ++i) {
+  //       fin2 >> trash;
+  //       int k;
+  //       fin2 >> k;
+  //       net.push_back({});
+  //       while (k--) {
+  //           string s;
+  //           fin2 >> s;
+  //           net.back().push_back(mp[s]);
+  //       }
+  //   }
+    
+	btree.Final_cost = 2e9;
+    // int SA_time = 500;
+	while (diff_time/CLOCKS_PER_SEC < 290) {
+		  lim_start = clock();
+      btree.init_tree();
+      btree.SA();
+      btree.update_final();
+      lim_end = clock();
+      diff_time += (lim_end - lim_start); 
+    }
+	//cout << diff_time / CLOCKS_PER_SEC << endl;
+	// cout << SA_time;
+	
+  //   fout.open(argv[4], ios::out);
+  //   fout << fixed << setprecision(1) << Final_cost << '\n';
+  //   fout << Final_wire << '\n';
+  //   fout << Final_area << '\placen';
+    
+	// int Final_x = 0, Final_y = 0;
+    
+	// for(int i = 1; i < n+1; ++i) {
+  //       Final_x = max(Final_x, frx[i]);
+  //       Final_y = max(Final_y, fry[i]);
+  //   }
+  //   fout << Final_x << ' ' << Final_y << '\n';
+  //   ed = clock();
+  //   fout << (ed - st) / CLOCKS_PER_SEC << '\n';
+
+    // for(int i = 1; i < macros_number+1; ++i) {
+    //     // fout << block_name[i] << ' ' << fx[i] <<' '<< fy[i] <<' '<< frx[i] <<' '<< fry[i] << endl;
+
+    // }
+
+    std::ofstream btree_draw_macro;
+    btree_draw_macro.open(std::string("btree_draw_macro.txt"));
+    btree_draw_macro << macros_number + spared_rows[0].size() << std::endl;
+    btree_draw_macro << die_width << " " << die_height << std::endl;
+    int count = -1;
+    for (int i = 0; i < case_.die_infos[DieSide::BOTTOM].rows.repeat_count; i++) {
+      btree_draw_macro  << count << " " << 0 << " "
+                        << i * case_.get_die_row_height(DieSide::BOTTOM) << " "
+                        << case_.get_die_row_width(DieSide::BOTTOM) << " "
+                        << case_.get_die_row_height(DieSide::BOTTOM)
+                        << std::endl;
+      count--;
+    }
+    count = 1;
+  // draw macro cell
+    for (int i = 1; i < macros_number+1; ++i) {
+      btree_draw_macro << count << " " << btree.fx[i] << " " << btree.fy[i] << " " << btree.frx[i] - btree.fx[i] << " " << btree.fry[i] - btree.fy[i] << std::endl;
+      count++;
+    }
+    btree_draw_macro.close();
+    
+
+
+
+}
+
+
 
 void Solver1::solve() {
   // separate macros and cells

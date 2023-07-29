@@ -1,13 +1,15 @@
 #include <utility>
-
+#include "btree.h"
 #include "solver.h"
+
 class Solver1 : public Solver {
   struct LineSegment {
     int y;
     int from;
     int to;
   };
-
+  
+  Btree btree;
   std::vector<double> die_max_util;
   std::vector<double> die_util;
   std::vector<std::vector<LineSegment>> horizontal_contours;
@@ -48,4 +50,6 @@ class Solver1 : public Solver {
   void draw_terminal();
 
   bool check_macro_numbers(size_t macro_numbers);
+
+  void Btree_place_macro(Btree &btree, DieSide side, std::vector<std::string> top_die_macros, int die_width, int die_height);
 };
