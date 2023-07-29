@@ -243,7 +243,7 @@ void Btree::remove(int x) {
     }
     if(subchild != 0){
         while(1){
-            std::cout << "a" << std::endl;
+            // std::cout << "a" << std::endl;
             if(ls[subparent] == 0 || rs[subparent] == 0){
                 pa[subchild] = subparent;
                 if(ls[subparent]==0) ls[subparent] = subchild;

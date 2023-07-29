@@ -7,7 +7,7 @@
 
 int main(int argc, char** argv) {
   // run time
-  const clock_t start = clock();
+  // const clock_t start = clock();
 
   std::ios_base::sync_with_stdio(false);
   std::cin.tie(nullptr);
@@ -27,9 +27,9 @@ int main(int argc, char** argv) {
 
   std::ofstream out_file(argv[2]);
   solver.dump(out_file);
-  const clock_t end = clock();
-  std::cout << "Run Times: "
-            << static_cast<double>(end - start) / CLOCKS_PER_SEC << "s"
-            << std::endl;
+  // const clock_t end = clock();
+  // std::cout << "Run Times: "
+  //           << static_cast<double>(end - start) / CLOCKS_PER_SEC << "s"
+  //           << std::endl;
   return 0;
 }
