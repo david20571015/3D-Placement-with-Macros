@@ -10,23 +10,25 @@ class Btree {
     public:
         int n, m, netnum;
         int root;
-        int best_area;
-        int tot_area;
-        int best_wire;
-        int limx, limy;
-        int Final_area, Final_wire;
+        long long best_area;
+        long long tot_area;
+        // int best_wire;
+        long long limx, limy;
+        long long Final_area;
+        // long long Final_area, Final_wire;
 
-        int x[maxn], rx[maxn], y[maxn], ry[maxn];
-        int b[maxn], p[maxn];
-        int ls[maxn], rs[maxn], pa[maxn];
-        int bpa[maxn], bls[maxn], brs[maxn], bx[maxn], brx[maxn], by[maxn], bry[maxn], broot;
-        int fx[maxn], frx[maxn], fy[maxn], fry[maxn];
+        long long x[maxn] = {0}, rx[maxn] = {0}, y[maxn] = {0}, ry[maxn] = {0};
+        long long b[maxn] = {0}, p[maxn] = {0};
+        long long ls[maxn] = {0}, rs[maxn] = {0}, pa[maxn] = {0};
+        long long bpa[maxn] = {0}, bls[maxn] = {0}, brs[maxn] = {0};
+        long long bx[maxn] = {0}, brx[maxn] = {0}, by[maxn] = {0}, bry[maxn] = {0}, broot;
+        long long fx[maxn] = {0}, frx[maxn] = {0}, fy[maxn] = {0}, fry[maxn] = {0};
 
         double T = 4000000000;
         const double r = 0.85;
         double best_cost;
         double Final_cost;
-        double alpha;
+        double alpha=1;
 
         std::string block_name[maxn];
 
@@ -39,8 +41,8 @@ class Btree {
         void dfs(int now, int pre);
         //void dfs2(int now, int pre);
         //void print();
-        int getarea(int &x, int &y);
-        int getwire();
+        long long getarea(long long &x, long long &y);
+        long long getwire();
         // tree
         void init_tree();
         void remove(int x);

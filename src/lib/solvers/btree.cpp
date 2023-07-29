@@ -4,6 +4,7 @@
 #include <random>
 #include <limits.h>
 #include <cstring>
+#include <iostream>
 
 void Btree::place(int now, int pre) {
     if (pre == 0) {
@@ -47,7 +48,7 @@ void Btree::place(int now, int pre) {
             b[pre] = now;
         }
     }
-    int mx = 0;
+    long long mx = 0;
     int i;
     for (i = p[now] ; i > 0 ; i = p[i]) {
         mx = std::max(mx, ry[i]);
@@ -85,40 +86,40 @@ void Btree::dfs(int now, int pre) {
 //    dfs2(ls[now], now);
 //    dfs2(rs[now], now);
 //}
-int Btree::getarea(int &x,int &y) {
+long long Btree::getarea(long long &x, long long &y) {
     for(int i = 1; i < n+1; ++i) {
         x = std::max(x, rx[i]);
         y = std::max(y, ry[i]);
     }
     return x * y;
 }
-int Btree::getwire() {
-    int ret = 0;
-    for (auto &i : net) {
-        int mix = INT_MAX, mxx = INT_MIN, miy = INT_MAX, mxy = INT_MIN;
-        for (auto &j : i) {
-            int xx = x[j] + (rx[j] - x[j]) / 2;
-            int yy = y[j] + (ry[j] - y[j]) / 2;
-            mix = std::min(mix, xx);
-            mxx = std::max(mxx, xx);
-            miy = std::min(miy, yy);
-            mxy = std::max(mxy, yy);
-        }
-        ret += mxx - mix + mxy - miy;
-    }
-    return ret;
-}
+// long long Btree::getwire() {
+//     long long ret = 0;
+//     for (auto &i : net) {
+//         int mix = INT_MAX, mxx = INT_MIN, miy = INT_MAX, mxy = INT_MIN;
+//         for (auto &j : i) {
+//             int xx = x[j] + (rx[j] - x[j]) / 2;
+//             int yy = y[j] + (ry[j] - y[j]) / 2;
+//             mix = std::min(mix, xx);
+//             mxx = std::max(mxx, xx);
+//             miy = std::min(miy, yy);
+//             mxy = std::max(mxy, yy);
+//         }
+//         ret += mxx - mix + mxy - miy;
+//     }
+//     return ret;
+// }
 bool Btree::upd() {
     for (int i = 1 ; i <= n ; ++i) {
         x[i] = rx[i] = y[i] = ry[i] = 0;
     }
     dfs(root, 0);
     //go();
-    int X = 0,Y = 0;
-    int Area = getarea(X, Y);
-    int Wire = getwire();
+    long long X = 0, Y = 0;
+    long long Area = getarea(X, Y);
+    // int Wire = getwire();
     //cout << Area << ' ' << Wire << endl;
-    double Ratio = (double)(X * limy) / (double)(Y * limx);
+    double Ratio = static_cast<double>(X * limy) / static_cast<double>(Y * limx);
     if (Ratio < 1) {
         Ratio = 1 / Ratio;
     }
@@ -137,9 +138,9 @@ bool Btree::upd() {
     if (Cost <= best_cost || force) {
         best_area = Area;
         best_cost = Cost;
-        best_wire = Wire;
+        // best_wire = Wire;
         broot = root;
-        int mx = 0, my = 0;
+        long long mx = 0, my = 0;
         for(int i = 1; i < n+1; ++i) {
             bpa[i] = pa[i];
             bls[i] = ls[i];
@@ -182,9 +183,12 @@ void Btree::init_tree() {
         v.push_back(i);
     }
     //random shuffle
+    auto rng = std::default_random_engine {};
+    std::shuffle(std::begin(v), std::end(v), rng);
     // std::random_shuffle(v.begin(), v.end());
     root = v[0];
-    best_cost = best_area = best_wire = 1e9;
+    // best_cost = best_area = best_wire = 1e9;
+    best_cost = best_area = 1e9;
     memset(ls, 0, sizeof(ls));
     memset(rs, 0, sizeof(rs));
     memset(pa, 0, sizeof(pa));
@@ -202,7 +206,8 @@ void Btree::init_tree() {
 void Btree::remove(int x) {
     int child    = 0;  
     int subchild = 0;   
-    int subparent= 0; 
+    int subparent= 0;
+
     if(ls[x]||rs[x]){
         bool left = rand() % 2;
         if(ls[x] == 0) left = 0;
@@ -238,6 +243,7 @@ void Btree::remove(int x) {
     }
     if(subchild != 0){
         while(1){
+            std::cout << "a" << std::endl;
             if(ls[subparent] == 0 || rs[subparent] == 0){
                 pa[subchild] = subparent;
                 if(ls[subparent]==0) ls[subparent] = subchild;
@@ -273,7 +279,7 @@ void Btree::swap1(int n1, int n2) {
     if (pa[n1] == n2) {
         std::swap(n1, n2);
     }
-    bool is_left = ls[n1] == n2 ;
+    bool is_left = ls[n1] == n2;
     if (root == n1 )
         root = n2;
     else if ( root == n2 )
@@ -394,13 +400,15 @@ void Btree::SA() {
     }
 }
 void Btree::update_final() {
-    int X = 0, Y = 0;
-    int best_area = getarea(X, Y);
-    int best_wire = getwire();
-    int Cost = (int)best_area * alpha + (int)best_wire * (1.0 - alpha);
+    long long X = 0, Y = 0;
+    long long best_area = getarea(X, Y);
+    // int best_wire = getwire();
+    // long long Cost = (best_area) * alpha + static_cast<long long>(best_wire) * (1.0 - alpha);
+    long long Cost = (best_area) * alpha;
+
     if (X <= limx && Y <= limy && Cost < Final_cost) {
         Final_cost = Cost;
-        Final_wire = best_wire;
+        // Final_wire = best_wire;
         Final_area = best_area;
         for (int i = 1 ; i <= n ; ++i) {
             fx[i] = x[i];
