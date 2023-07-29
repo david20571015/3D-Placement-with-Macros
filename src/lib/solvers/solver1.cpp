@@ -880,67 +880,66 @@ void Solver1::solve() {
   separate_macros_cells(case_.get_macro_list(), macro_C_index, cell_C_index);
 
   // macro
+  // first version
   // decide what die each macro should be placed
+  std::cout << "place macro" << std::endl;
   std::vector<std::string> top_die_macros;
   std::vector<std::string> bottom_die_macros;
   decide_what_die(macro_C_index, top_die_macros, bottom_die_macros);
   std::cout << top_die_macros.size() << " " << bottom_die_macros.size() << std::endl;
 
-  Btree btree;
-  Btree_place_macro(btree, DieSide::TOP, top_die_macros, case_.size.upper_right_x, case_.size.upper_right_y);
-  
-  Btree btree1;
-  Btree_place_macro(btree1, DieSide::BOTTOM, bottom_die_macros, case_.size.upper_right_x, case_.size.upper_right_y);
-
-
   // sort by (height / width)
-  // sort_macro(DieSide::TOP, top_die_macros);
-  // sort_macro(DieSide::BOTTOM, bottom_die_macros);
+  sort_macro(DieSide::TOP, top_die_macros);
+  sort_macro(DieSide::BOTTOM, bottom_die_macros);
 
   // place macros on the top and bottom die
-  // std::cout << "place macro" << std::endl;
-  // place_macro_on_die(DieSide::TOP, top_die_macros);
-  // place_macro_on_die(DieSide::BOTTOM, bottom_die_macros);
-  // std::cout << "done" << std::endl;
+  place_macro_on_die(DieSide::TOP, top_die_macros);
+  place_macro_on_die(DieSide::BOTTOM, bottom_die_macros);
 
   // get macros that are not placed
-  // std::vector<std::string> top_not_placed_macros;
-  // std::vector<std::string> bottom_not_placed_macros;
-  // get_inst_that_not_placed(DieSide::TOP, top_die_macros, top_not_placed_macros);
-  // get_inst_that_not_placed(DieSide::BOTTOM, bottom_die_macros,
-  //                          bottom_not_placed_macros);
+  std::vector<std::string> top_not_placed_macros;
+  std::vector<std::string> bottom_not_placed_macros;
+  get_inst_that_not_placed(DieSide::TOP, top_die_macros, top_not_placed_macros);
+  get_inst_that_not_placed(DieSide::BOTTOM, bottom_die_macros,
+                           bottom_not_placed_macros);
 
   // sort by (height / width)
-  // if (!bottom_not_placed_macros.empty()) {
-  //   sort_macro(DieSide::TOP, bottom_not_placed_macros);
-  // }
-  // if (!top_not_placed_macros.empty()) {
-  //   sort_macro(DieSide::BOTTOM, top_not_placed_macros);
-  // }
+  if (!bottom_not_placed_macros.empty()) {
+    sort_macro(DieSide::TOP, bottom_not_placed_macros);
+  }
+  if (!top_not_placed_macros.empty()) {
+    sort_macro(DieSide::BOTTOM, top_not_placed_macros);
+  }
 
   // place them on the other die
-  // if (!bottom_not_placed_macros.empty()) {
-  //   place_macro_on_die(DieSide::TOP, bottom_not_placed_macros);
-  // }
-  // if (!top_not_placed_macros.empty()) {
-  //   place_macro_on_die(DieSide::BOTTOM, top_not_placed_macros);
-  // }
+  if (!bottom_not_placed_macros.empty()) {
+    // std::cout << "bottom not placed macros: " << bottom_not_placed_macros.size() << std::endl;
+    place_macro_on_die(DieSide::TOP, bottom_not_placed_macros);
+  }
+  if (!top_not_placed_macros.empty()) {
+    // std::cout << "top not placed macros: " << top_not_placed_macros.size() << std::endl;
+    place_macro_on_die(DieSide::BOTTOM, top_not_placed_macros);
+  }
 
-  if (check_macro_numbers(macro_C_index.size())) {
-    std::cout << "macro number is correct" << std::endl;
-  } 
-  else {
-    std::cout << "macro number is not correct" << std::endl;
-    //second version of place macro
+  //second version
+  if (!check_macro_numbers(macro_C_index.size())) {
     initialize_macro();
     place_macro_on_die_version2(DieSide::TOP, top_die_macros);
     place_macro_on_die_version2(DieSide::BOTTOM, bottom_die_macros);
-    if(check_macro_numbers(macro_C_index.size())) {
-      std::cout << "macro number is correct by version2" << std::endl;
-    } else {
-      std::cout << "macro number is not correct by version2" << std::endl;
-    }
   }
+
+  // third version
+  if (!check_macro_numbers(macro_C_index.size())) {
+    initialize_macro();
+    
+    Btree btree;
+    Btree_place_macro(btree, DieSide::TOP, top_die_macros, case_.size.upper_right_x, case_.size.upper_right_y);
+    
+    Btree btree1;
+    Btree_place_macro(btree1, DieSide::BOTTOM, bottom_die_macros, case_.size.upper_right_x, case_.size.upper_right_y);
+  }
+
+  // std::cout << "done" << std::endl;
 
   // cell
   // decide what die each cell should be placed
