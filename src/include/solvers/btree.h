@@ -19,7 +19,7 @@ class Btree {
         int bpa[maxn], bls[maxn], brs[maxn], bx[maxn], brx[maxn], by[maxn], bry[maxn], broot;
         int fx[maxn], frx[maxn], fy[maxn], fry[maxn];
 
-        const double T = 4000000000;
+        double T = 4000000000;
         const double r = 0.85;
         double best_cost;
         double Final_cost;

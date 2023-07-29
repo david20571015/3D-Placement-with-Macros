@@ -22,11 +22,12 @@ Solver1::Solver1(Case&& case_) : Solver(std::move(case_)) {
           {{0, this->case_.die_infos[DieSide::BOTTOM].rows.row_length}})};
 
   // initialize die size and utilization
-  die_size = this->case_.size.upper_right_x * this->case_.size.upper_right_y;
+  die_size = static_cast<long long>(this->case_.size.upper_right_x) * (this->case_.size.upper_right_y);
   const double percent = 100.0;
   die_max_util = {this->case_.die_infos[DieSide::TOP].max_util / percent,
                   this->case_.die_infos[DieSide::BOTTOM].max_util / percent};
   die_util = {0.0, 0.0};
+  std::cout << die_size << " " << this->case_.size.upper_right_x << " " << this->case_.size.upper_right_y << std::endl;
 }
 
 bool Solver1::check_capacity(DieSide side, int die_cell_index) {
@@ -97,25 +98,30 @@ void Solver1::sort_cell(DieSide side, std::vector<std::string>& cell_C_index) {
 void Solver1::decide_what_die(const std::vector<std::string>& inst_C_index,
                               std::vector<std::string>& top_die,
                               std::vector<std::string>& bottom_die) {
+  std::cout << inst_C_index.size() << std::endl;
   for (const auto& inst_name : inst_C_index) {
     const std::string inst_type = case_.netlist.inst[inst_name];
     const int die_cell_index = case_.get_cell_index(inst_type);
 
     const bool alter =
-        (die_max_util[DieSide::TOP] - die_util[DieSide::TOP]) >
+        (die_max_util[DieSide::TOP] - die_util[DieSide::TOP]) >=
         (die_max_util[DieSide::BOTTOM] - die_util[DieSide::BOTTOM]);
 
-    if (alter && check_capacity(DieSide::TOP, die_cell_index)) {
+    if ((alter) && (check_capacity(DieSide::TOP, die_cell_index))) {
       die_util[DieSide::TOP] +=
           (case_.get_lib_cell_size(DieSide::TOP, die_cell_index) /
            static_cast<double>(die_size));
       top_die.push_back(inst_name);
-    } else if (!alter && check_capacity(DieSide::BOTTOM, die_cell_index)) {
+    } else if ((!alter) && (check_capacity(DieSide::BOTTOM, die_cell_index))) {
       die_util[DieSide::BOTTOM] +=
           (case_.get_lib_cell_size(DieSide::BOTTOM, die_cell_index) /
            static_cast<double>(die_size));
       bottom_die.push_back(inst_name);
     } else {
+      // std::cout << inst_name << " " << case_.get_lib_cell_size(DieSide::TOP, die_cell_index) /
+      //      static_cast<double>(die_size) << std::endl
+      //      << " " << case_.get_lib_cell_size(DieSide::BOTTOM, die_cell_index) /
+      //      static_cast<double>(die_size) << std::endl;
       std::cerr << "Macro: Die utilization exceeds maximum utilization"
                 << std::endl;
       return;
@@ -123,7 +129,8 @@ void Solver1::decide_what_die(const std::vector<std::string>& inst_C_index,
   }
 }
 
-void Solver1::decide_what_die_cell(std::vector<std::string>& top_die,
+void Solver1::decide_what_die_cell(const std::vector<std::string>& inst_C_index,
+                                   std::vector<std::string>& top_die,
                                    std::vector<std::string>& bottom_die) {
   std::set<std::string> decided;
 
@@ -133,21 +140,50 @@ void Solver1::decide_what_die_cell(std::vector<std::string>& top_die,
       const std::string inst_type = case_.netlist.inst[inst_name];
       const int die_cell_index = case_.get_cell_index(inst_type);
 
+      if ((case_.get_is_macro(DieSide::TOP, die_cell_index))) {
+        continue;
+      }
+
       if (decided.count(inst_name) == 0) {
-        if (check_capacity(DieSide::TOP, die_cell_index) && !(case_.get_is_macro(DieSide::TOP, die_cell_index))) {
+        if (check_capacity(DieSide::TOP, die_cell_index)) {
           die_util[DieSide::TOP] +=
               (case_.get_lib_cell_size(DieSide::TOP, die_cell_index) /
                static_cast<double>(die_size));
           top_die.push_back(inst_name);
           decided.insert(inst_name);
-        } else if (check_capacity(DieSide::BOTTOM, die_cell_index) && !(case_.get_is_macro(DieSide::BOTTOM, die_cell_index))) {
+        } else if (check_capacity(DieSide::BOTTOM, die_cell_index)) {
           die_util[DieSide::BOTTOM] +=
               (case_.get_lib_cell_size(DieSide::BOTTOM, die_cell_index) /
                static_cast<double>(die_size));
           bottom_die.push_back(inst_name);
           decided.insert(inst_name);
-        } else if (!(check_capacity(DieSide::TOP, die_cell_index)) && !(check_capacity(DieSide::BOTTOM, die_cell_index))) {
-          // std::cerr << "Cell: Die utilization exceeds maximum utilization" << std::endl;
+        } else {
+          std::cerr << "Cell: Die utilization exceeds maximum utilization" << std::endl;
+        }
+      }
+    }
+  }
+
+  if (decided.size() != inst_C_index.size()) {
+    for (const auto& inst_name: inst_C_index) {
+      const std::string inst_type = case_.netlist.inst[inst_name];
+      const int die_cell_index = case_.get_cell_index(inst_type);
+
+      if (decided.count(inst_name) == 0) {
+        if (check_capacity(DieSide::TOP, die_cell_index)) {
+          die_util[DieSide::TOP] +=
+              (case_.get_lib_cell_size(DieSide::TOP, die_cell_index) /
+                static_cast<double>(die_size));
+          top_die.push_back(inst_name);
+          decided.insert(inst_name);
+        } else if (check_capacity(DieSide::BOTTOM, die_cell_index)) {
+          die_util[DieSide::BOTTOM] +=
+              (case_.get_lib_cell_size(DieSide::BOTTOM, die_cell_index) /
+                static_cast<double>(die_size));
+          bottom_die.push_back(inst_name);
+          decided.insert(inst_name);
+        } else {
+          std::cerr << "Cell: Die utilization exceeds maximum utilization" << std::endl;
         }
       }
     }
@@ -309,7 +345,7 @@ void Solver1::update_spared_rows(DieSide side, const int x, const size_t y,
   int top_row_index = (y + height) / row_height;
   int bottom_row_index = y / row_height;
 
-  if (y + height > row_height * spared_rows[side].size()) {
+  if (y + height > static_cast<long long>(row_height) * spared_rows[side].size()) {
     top_row_index = spared_rows[side].size() - 1;
   } else if ((y + height) % row_height == 0) {
     top_row_index -= 1;
@@ -397,6 +433,9 @@ void Solver1::place_cell_on_die(DieSide side,
     const bool success = place_cell(side, x, y, width, height);
 
     if (success) {
+      // if (side == DieSide::BOTTOM) {
+      //   std::cout << inst_name << " " << x << " " << y << std::endl;
+      // }
       case_.netlist.placed[inst_name] = true;
       case_.netlist.inst_top_or_bottom[inst_name] = side;
 
@@ -745,6 +784,17 @@ void Solver1::Btree_place_macro(Btree &btree, DieSide side, std::vector<std::str
 
 
 
+bool Solver1::check_cell_numbers(std::vector<std::string>& cell_C_index) {
+  for(auto& inst_name : cell_C_index) {
+    if(!case_.netlist.placed[inst_name]) {
+      // std::cout << "cell not placed: " << inst_name << std::endl;
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void Solver1::solve() {
   // separate macros and cells
   std::vector<std::string> macro_C_index;
@@ -762,8 +812,10 @@ void Solver1::solve() {
   sort_macro(DieSide::BOTTOM, bottom_die_macros);
 
   // place macros on the top and bottom die
+  std::cout << "place macro" << std::endl;
   place_macro_on_die(DieSide::TOP, top_die_macros);
   place_macro_on_die(DieSide::BOTTOM, bottom_die_macros);
+  std::cout << "done" << std::endl;
 
   // get macros that are not placed
   std::vector<std::string> top_not_placed_macros;
@@ -788,19 +840,31 @@ void Solver1::solve() {
     place_macro_on_die(DieSide::BOTTOM, top_not_placed_macros);
   }
 
+  if (check_macro_numbers(macro_C_index.size())) {
+    std::cout << "macro number is correct" << std::endl;
+  } else {
+    std::cout << "macro number is not correct" << std::endl;
+  }
+
   // cell
   // decide what die each cell should be placed
   std::vector<std::string> top_die_cells;
   std::vector<std::string> bottom_die_cells;
-  decide_what_die_cell(top_die_cells, bottom_die_cells);
+  std::cout << "decide what die cell" << std::endl;
+  decide_what_die_cell(cell_C_index, top_die_cells, bottom_die_cells);
+  std::cout << top_die_cells.size() << std::endl;
+  std::cout << bottom_die_cells.size() << std::endl;
+  std::cout << "done" << std::endl;
 
   // sort by width
   sort_cell(DieSide::TOP, top_die_cells);
   sort_cell(DieSide::BOTTOM, bottom_die_cells);
 
   // place cells on the top and bottom die
+  std::cout << "place cell" << std::endl;
   place_cell_on_die(DieSide::TOP, top_die_cells);
   place_cell_on_die(DieSide::BOTTOM, bottom_die_cells);
+  std::cout << "done" << std::endl;
 
   // get cells that are not placed
   std::vector<std::string> top_not_placed_cells;
@@ -811,24 +875,32 @@ void Solver1::solve() {
 
   // sort by width
   if (!bottom_not_placed_cells.empty()) {
+    std::cout << "bottom not placed cells: " << bottom_not_placed_cells.size() << std::endl;
     sort_cell(DieSide::TOP, bottom_not_placed_cells);
   }
   if (!top_not_placed_cells.empty()) {
+    std::cout << "top not placed cells: " << top_not_placed_cells.size() << std::endl;
     sort_cell(DieSide::BOTTOM, top_not_placed_cells);
   }
 
   // place them on the other die
-  if (!bottom_not_placed_macros.empty()) {
+  if (!bottom_not_placed_cells.empty()) {
     place_cell_on_die(DieSide::TOP, bottom_not_placed_cells);
   }
   if (!top_not_placed_cells.empty()) {
     place_cell_on_die(DieSide::BOTTOM, top_not_placed_cells);
   }
 
- 
+  if (check_cell_numbers(cell_C_index)) {
+    std::cout << "cell number is correct" << std::endl;
+  } else {
+    std::cout << "cell number is not correct" << std::endl;
+  }
+
   // terminal
   place_terminal();
 
+  // draw
   draw_macro();
   draw_terminal();
 }
