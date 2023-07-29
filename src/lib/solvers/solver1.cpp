@@ -730,6 +730,115 @@ bool Solver1::check_cell_numbers(std::vector<std::string>& cell_C_index) {
   return true;
 }
 
+void Solver1::initialize_macro(){
+  // initailize macro
+  solution_.die_insts[DieSide::TOP].clear();
+  solution_.die_insts[DieSide::BOTTOM].clear();
+  horizontal_contours[DieSide::TOP].clear();
+  horizontal_contours[DieSide::BOTTOM].clear();
+  spared_rows[DieSide::TOP].clear();
+  spared_rows[DieSide::BOTTOM].clear();
+  // die_util[DieSide::TOP] = 0;
+  // die_util[DieSide::BOTTOM] = 0;
+
+
+  case_.netlist.placed.clear();
+  case_.netlist.inst_top_or_bottom.clear();
+
+
+
+  horizontal_contours = {{{0, 0, this->case_.size.upper_right_x}},
+                         {{0, 0, this->case_.size.upper_right_x}}};
+
+  spared_rows = {
+      std::vector<std::vector<std::pair<int, int>>>(
+          this->case_.die_infos[DieSide::TOP].rows.repeat_count,
+          {{0, this->case_.die_infos[DieSide::TOP].rows.row_length}}),
+      std::vector<std::vector<std::pair<int, int>>>(
+          this->case_.die_infos[DieSide::BOTTOM].rows.repeat_count,
+          {{0, this->case_.die_infos[DieSide::BOTTOM].rows.row_length}})};
+
+}
+
+void Solver1::place_macro_on_die_version2(DieSide side, const std::vector<std::string>& macros){
+   for (const auto& inst_name : macros) {
+    const std::string& inst_type = case_.netlist.inst[inst_name];
+    const int die_cell_index = case_.get_cell_index(inst_type);
+    int width = case_.get_lib_cell_width(side, die_cell_index);
+    int height = case_.get_lib_cell_height(side, die_cell_index);
+    Inst::Rotate orientation = Inst::R0;
+    case_.netlist.placed[inst_name] = false;
+
+    if (width < height){
+      std::swap(width, height);
+      orientation = Inst::R90;
+    }
+
+    // place
+    int x = 0;
+    int y = 0;
+    const bool success = place_macro(side, x, y, width, height);
+
+    if (success){
+      // reverese the placement of macro
+      y = case_.size.upper_right_y - y - height;
+
+      const LineSegment& segment = horizontal_contours[side].back();
+      if (segment.from >= segment.to) {
+        horizontal_contours[side].pop_back();
+      }
+
+      // update spared rows
+      update_spared_rows(side, x, y, width, height);
+
+      // update
+      case_.netlist.placed[inst_name] = true;
+      case_.netlist.inst_top_or_bottom[inst_name] = side;
+
+      // update solution
+      solution_.die_insts[side].emplace_back(inst_name, x, y, orientation);
+    }
+    else{
+      //rotate macro and place again
+      if(orientation == Inst::R0){
+        orientation = Inst::R90;
+      }
+      else{
+        orientation = Inst::R0;
+      }
+      std::swap(width, height);
+      x = 0;
+      y = 0;
+      const bool success_ = place_macro(side, x, y, width, height);
+      
+      if (success_) {
+        // reverese the placement of macro
+        std::cout << "can place macro: " << inst_name << std::endl;
+        y = case_.size.upper_right_y - y - height;
+
+        const LineSegment& segment = horizontal_contours[side].back();
+        if (segment.from >= segment.to) {
+          horizontal_contours[side].pop_back();
+        }
+
+        // update spared rows
+        update_spared_rows(side, x, y, width, height);
+
+        // update
+        case_.netlist.placed[inst_name] = true;
+        case_.netlist.inst_top_or_bottom[inst_name] = side;
+
+        // update solution
+        solution_.die_insts[side].emplace_back(inst_name, x, y, orientation);
+      }
+      else{
+        std::cerr << "Can't place macro: " << inst_name << std::endl;
+      }
+    }
+  }
+}
+
+
 void Solver1::solve() {
   // separate macros and cells
   std::vector<std::string> macro_C_index;
@@ -778,8 +887,18 @@ void Solver1::solve() {
 
   if (check_macro_numbers(macro_C_index.size())) {
     std::cout << "macro number is correct" << std::endl;
-  } else {
+  } 
+  else {
     std::cout << "macro number is not correct" << std::endl;
+    //second version of place macro
+    initialize_macro();
+    place_macro_on_die_version2(DieSide::TOP, top_die_macros);
+    place_macro_on_die_version2(DieSide::BOTTOM, bottom_die_macros);
+    if(check_macro_numbers(macro_C_index.size())) {
+      std::cout << "macro number is correct by version2" << std::endl;
+    } else {
+      std::cout << "macro number is not correct by version2" << std::endl;
+    }
   }
 
   // cell
@@ -827,10 +946,11 @@ void Solver1::solve() {
     place_cell_on_die(DieSide::BOTTOM, top_not_placed_cells);
   }
 
+
   if (check_cell_numbers(cell_C_index)) {
-    std::cout << "cell number is correct" << std::endl;
+    std::cout << "cell number is correct by version1" << std::endl;
   } else {
-    std::cout << "cell number is not correct" << std::endl;
+    std::cout << "cell number is not correct by version1" << std::endl;
   }
 
   // terminal

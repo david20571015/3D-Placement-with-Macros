@@ -54,4 +54,7 @@ class Solver1 : public Solver {
 
   void Btree_place_macro(Btree &btree, DieSide side, std::vector<std::string> top_die_macros, int die_width, int die_height);
   bool check_cell_numbers(std::vector<std::string>& cell_C_index);
+
+  void initialize_macro();
+  void place_macro_on_die_version2(DieSide side, const std::vector<std::string>& macros);
 };
