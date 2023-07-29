@@ -773,10 +773,10 @@ void Solver1::solve() {
     std::cout << "cell number is not correct" << std::endl;
   }
 
- 
   // terminal
   place_terminal();
 
+  // draw
   draw_macro();
   draw_terminal();
 }
