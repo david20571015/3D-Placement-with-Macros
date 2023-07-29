@@ -1,3 +1,6 @@
+#ifndef SRC_INCLUDE_SOLVERS_BTREE_H_
+#define SRC_INCLUDE_SOLVERS_BTREE_H_
+
 #include <string>
 #include <vector>
 #include <map>
@@ -49,3 +52,5 @@ class Btree {
         void SA();
         void update_final();
 };
+
+#endif
