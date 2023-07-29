@@ -123,35 +123,31 @@ void Solver1::decide_what_die(const std::vector<std::string>& inst_C_index,
   }
 }
 
-void Solver1::decide_what_die_cell(const std::vector<std::string>& inst_C_index,
-                                   std::vector<std::string>& top_die,
+void Solver1::decide_what_die_cell(std::vector<std::string>& top_die,
                                    std::vector<std::string>& bottom_die) {
   std::set<std::string> decided;
 
   for (const auto& net : case_.netlist.nets) {
     for (const auto& pin : net.pins) {
       const std::string inst_name = pin.first;
-      if (decided.count(inst_name) == 0 &&
-          (std::find(inst_C_index.begin(), inst_C_index.end(), inst_name) !=
-           inst_C_index.end())) {
-        const std::string inst_type = case_.netlist.inst[inst_name];
-        const int die_cell_index = case_.get_cell_index(inst_type);
+      const std::string inst_type = case_.netlist.inst[inst_name];
+      const int die_cell_index = case_.get_cell_index(inst_type);
 
-        if (check_capacity(DieSide::TOP, die_cell_index)) {
+      if (decided.count(inst_name) == 0) {
+        if (check_capacity(DieSide::TOP, die_cell_index) && !(case_.get_is_macro(DieSide::TOP, die_cell_index))) {
           die_util[DieSide::TOP] +=
               (case_.get_lib_cell_size(DieSide::TOP, die_cell_index) /
                static_cast<double>(die_size));
           top_die.push_back(inst_name);
           decided.insert(inst_name);
-        } else if (check_capacity(DieSide::BOTTOM, die_cell_index)) {
+        } else if (check_capacity(DieSide::BOTTOM, die_cell_index) && !(case_.get_is_macro(DieSide::BOTTOM, die_cell_index))) {
           die_util[DieSide::BOTTOM] +=
               (case_.get_lib_cell_size(DieSide::BOTTOM, die_cell_index) /
                static_cast<double>(die_size));
           bottom_die.push_back(inst_name);
           decided.insert(inst_name);
-        } else {
-          std::cerr << "Cell: Die utilization exceeds maximum utilization"
-                    << std::endl;
+        } else if (!(check_capacity(DieSide::TOP, die_cell_index)) && !(check_capacity(DieSide::BOTTOM, die_cell_index))) {
+          // std::cerr << "Cell: Die utilization exceeds maximum utilization" << std::endl;
         }
       }
     }
@@ -326,27 +322,34 @@ void Solver1::update_spared_rows(DieSide side, const int x, const size_t y,
   const int left = x;
   const int right = x + width;
   for (int i = bottom_row_index; i <= top_row_index; ++i) {
-    size_t j = 0;
-    while (j < spared_rows[side][i].size() - 1 &&
-           left > spared_rows[side][i][j].second) {
-      ++j;
+    size_t left_j = 0;
+    while ((left < spared_rows[side][i].size() - 1) &&
+           (left > spared_rows[side][i][left_j].second)) {
+      ++left_j;
+    }
+    size_t right_j = left_j;
+    while ((right < spared_rows[side][i].size() - 1) &&
+           (right > spared_rows[side][i][right_j].second)) {
+      ++right_j;
     }
 
-    if (left == spared_rows[side][i][j].first &&
-        right == spared_rows[side][i][j].second) {
-      spared_rows[side][i].erase(spared_rows[side][i].begin() + j);
-    } else if (left == spared_rows[side][i][j].first) {
-      spared_rows[side][i][j].first = right;
-    } else if (right == spared_rows[side][i][j].second) {
-      spared_rows[side][i][j].second = left;
-    } else {
-      std::pair<int, int> new_pair = {right, spared_rows[side][i][j].second};
-      spared_rows[side][i][j].second = left;
-      if (j == spared_rows[side][i].size() - 1) {
-        spared_rows[side][i].push_back(std::move(new_pair));
-      } else {
-        spared_rows[side][i].insert(spared_rows[side][i].begin() + j + 1,
-                                    std::move(new_pair));
+    for (int k = left_j; k <= right_j; ++k) {
+      if ((left > spared_rows[side][i][k].first) &&
+          (right < spared_rows[side][i][k].second)) {
+        const int tmp = spared_rows[side][i][k].second;
+        spared_rows[side][i][k].second = left;
+        spared_rows[side][i].insert(spared_rows[side][i].begin() + k, {right, tmp});
+        ++k;
+        ++right_j;
+      } else if ((left > spared_rows[side][i][k].first) || (right == spared_rows[side][i][k].second)) {
+        spared_rows[side][i][k].second = left;
+      } else if ((right < spared_rows[side][i][k].second) || (left == spared_rows[side][i][k].first)) {
+        spared_rows[side][i][k].first = right;
+      } else if ((left == spared_rows[side][i][k].first) &&
+          (right == spared_rows[side][i][k].second)) {
+        spared_rows[side][i].erase(spared_rows[side][i].begin() + k);
+        --k;
+        --right_j;
       }
     }
   }
@@ -665,7 +668,7 @@ void Solver1::solve() {
   // decide what die each cell should be placed
   std::vector<std::string> top_die_cells;
   std::vector<std::string> bottom_die_cells;
-  decide_what_die_cell(cell_C_index, top_die_cells, bottom_die_cells);
+  decide_what_die_cell(top_die_cells, bottom_die_cells);
 
   // sort by width
   sort_cell(DieSide::TOP, top_die_cells);
@@ -698,6 +701,10 @@ void Solver1::solve() {
     place_cell_on_die(DieSide::BOTTOM, top_not_placed_cells);
   }
 
+ 
   // terminal
   place_terminal();
+
+  draw_macro();
+  draw_terminal();
 }

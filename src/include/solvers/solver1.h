@@ -29,8 +29,7 @@ class Solver1 : public Solver {
   void decide_what_die(const std::vector<std::string>& inst_C_index,
                        std::vector<std::string>& top_die,
                        std::vector<std::string>& bottom_die);
-  void decide_what_die_cell(const std::vector<std::string>& inst_C_index,
-                            std::vector<std::string>& top_die,
+  void decide_what_die_cell(std::vector<std::string>& top_die,
                             std::vector<std::string>& bottom_die);
   void place_macro_on_die(DieSide side, const std::vector<std::string>& macros);
   bool place_macro(DieSide side, int& x, int& y, int width, int height);
