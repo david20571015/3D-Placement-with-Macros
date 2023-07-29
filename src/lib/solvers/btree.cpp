@@ -2,6 +2,8 @@
 #include <algorithm> 
 #include <cstdlib>
 #include <random>
+#include <limits.h>
+#include <cstring>
 
 void Btree::place(int now, int pre) {
     if (pre == 0) {

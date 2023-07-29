@@ -741,6 +741,7 @@ void Solver1::solve() {
   std::vector<std::string> top_die_macros;
   std::vector<std::string> bottom_die_macros;
   decide_what_die(macro_C_index, top_die_macros, bottom_die_macros);
+  std::cout << top_die_macros.size() << " " << bottom_die_macros.size() << std::endl;
 
   // sort by (height / width)
   sort_macro(DieSide::TOP, top_die_macros);
