@@ -392,62 +392,96 @@ void Solver1::update_spared_rows(DieSide side, const int x, const size_t y,
 }
 
 void Solver1::Btree_place_macro(Btree &btree, DieSide side, std::vector<std::string> die_macros, int die_width, int die_height){
-    double diff_time = 0;
-    std::string trash;
-    clock_t lim_start, lim_end;
-    const int limx = die_width;
-    const int limy = die_height;
-    const int macros_number = die_macros.size();
+  double diff_time = 0;
+  std::string trash;
+  clock_t lim_start, lim_end;
+  btree.limx = die_width;
+  btree.limy = die_height;
+  const int macros_number = die_macros.size();
+  btree.n = macros_number;
+  btree.m = 0;
+  btree.netnum = 0;
     
 	for (int i = 1 ; i <= macros_number ; ++i) {
-        //macro name
-        std::string s; 
-        // fin >> s >> pr[i].first >> pr[i].second;
-        s =  die_macros[i-1];
-        const std::string& inst_type = case_.netlist.inst[s];
-        const int die_cell_index = case_.get_cell_index(inst_type);
-        int width = case_.get_lib_cell_width(side, die_cell_index);
-        int height = case_.get_lib_cell_height(side, die_cell_index);
-        
-        btree.pr[i].first = width;
-        btree.pr[i].second = height;
-        //cout << s << endl;
-        btree.block_name[i] = s;
-        btree.mp[s] = i;
-        btree.tot_area += btree.pr[i].first * btree.pr[i].second;
-    }
+    //macro name
+    std::string s; 
+    s =  die_macros[i-1];
+    const std::string& inst_type = case_.netlist.inst[s];
+    const int die_cell_index = case_.get_cell_index(inst_type);
+    int width = case_.get_lib_cell_width(side, die_cell_index);
+    int height = case_.get_lib_cell_height(side, die_cell_index);
+    
+    btree.pr[i].first = width;
+    btree.pr[i].second = height;
+    //cout << s << endl;
+    btree.block_name[i] = s;
+    btree.mp[s] = i;
+    btree.tot_area += btree.pr[i].first * btree.pr[i].second;
+  }
     
 	btree.Final_cost = 2e9;
     // int SA_time = 500;
-	while (diff_time/CLOCKS_PER_SEC < 290) {
-		  lim_start = clock();
-      btree.init_tree();
-      btree.SA();
-      btree.update_final();
-      lim_end = clock();
-      diff_time += (lim_end - lim_start); 
-    }
+	while (diff_time/CLOCKS_PER_SEC < 30) {
+    lim_start = clock();
+    btree.init_tree();
+    btree.SA();
+    btree.update_final();
+    lim_end = clock();
+    diff_time += (lim_end - lim_start);
+    std::cout << diff_time/CLOCKS_PER_SEC << std::endl;
+  }
 
-    std::ofstream btree_draw_macro;
-    btree_draw_macro.open(std::string("btree_draw_macro.txt"));
-    btree_draw_macro << macros_number + spared_rows[0].size() << std::endl;
-    btree_draw_macro << die_width << " " << die_height << std::endl;
-    int count = -1;
-    for (int i = 0; i < case_.die_infos[DieSide::BOTTOM].rows.repeat_count; i++) {
-      btree_draw_macro  << count << " " << 0 << " "
-                        << i * case_.get_die_row_height(DieSide::BOTTOM) << " "
-                        << case_.get_die_row_width(DieSide::BOTTOM) << " "
-                        << case_.get_die_row_height(DieSide::BOTTOM)
-                        << std::endl;
-      count--;
+  for (int i = 1; i < macros_number+1; ++i) {
+    std::string inst_name =  die_macros[i-1];
+    const std::string& inst_type = case_.netlist.inst[inst_name];
+    const int die_cell_index = case_.get_cell_index(inst_type);
+    int width = case_.get_lib_cell_width(side, die_cell_index);
+    int height = case_.get_lib_cell_height(side, die_cell_index);
+    std::cout << btree.fx[i] << " " << btree.fy[i] << " " << btree.frx[i] << " " << btree.fry[i] << std::endl;
+    
+    int x = btree.fx[i];
+    int y = btree.fy[i];
+    Inst::Rotate orientation;
+
+    if ((x + width) == btree.frx[i]) {
+      orientation = Inst::R0;
+    } else {
+      orientation = Inst::R90;
     }
-    count = 1;
+    
+    y = case_.size.upper_right_y - y - height;
+
+    // update spared rows
+    update_spared_rows(side, x, y, width, height);
+
+    // update
+    case_.netlist.placed[inst_name] = true;
+    case_.netlist.inst_top_or_bottom[inst_name] = side;
+
+    // update solution
+    solution_.die_insts[side].emplace_back(inst_name, x, y, orientation);
+  }
+
+  std::ofstream btree_draw_macro;
+  btree_draw_macro.open(std::string("btree_draw_macro.txt"));
+  btree_draw_macro << macros_number + spared_rows[0].size() << std::endl;
+  btree_draw_macro << die_width << " " << die_height << std::endl;
+  int count = -1;
+  for (int i = 0; i < case_.die_infos[DieSide::BOTTOM].rows.repeat_count; i++) {
+    btree_draw_macro  << count << " " << 0 << " "
+                      << i * case_.get_die_row_height(DieSide::BOTTOM) << " "
+                      << case_.get_die_row_width(DieSide::BOTTOM) << " "
+                      << case_.get_die_row_height(DieSide::BOTTOM)
+                      << std::endl;
+    count--;
+  }
+  count = 1;
   // draw macro cell
-    for (int i = 1; i < macros_number+1; ++i) {
-      btree_draw_macro << count << " " << btree.fx[i] << " " << btree.fy[i] << " " << btree.frx[i] - btree.fx[i] << " " << btree.fry[i] - btree.fy[i] << std::endl;
-      count++;
-    }
-    btree_draw_macro.close();
+  for (int i = 1; i < macros_number+1; ++i) {
+    btree_draw_macro << count << " " << btree.fx[i] << " " << btree.fy[i] << " " << btree.frx[i] - btree.fx[i] << " " << btree.fry[i] - btree.fy[i] << std::endl;
+    count++;
+  }
+  btree_draw_macro.close();
 }
 
 bool Solver1::place_cell(DieSide side, int& x, int& y, const int width,
@@ -852,38 +886,45 @@ void Solver1::solve() {
   decide_what_die(macro_C_index, top_die_macros, bottom_die_macros);
   std::cout << top_die_macros.size() << " " << bottom_die_macros.size() << std::endl;
 
+  Btree btree;
+  Btree_place_macro(btree, DieSide::TOP, top_die_macros, case_.size.upper_right_x, case_.size.upper_right_y);
+  
+  Btree btree1;
+  Btree_place_macro(btree1, DieSide::BOTTOM, bottom_die_macros, case_.size.upper_right_x, case_.size.upper_right_y);
+
+
   // sort by (height / width)
-  sort_macro(DieSide::TOP, top_die_macros);
-  sort_macro(DieSide::BOTTOM, bottom_die_macros);
+  // sort_macro(DieSide::TOP, top_die_macros);
+  // sort_macro(DieSide::BOTTOM, bottom_die_macros);
 
   // place macros on the top and bottom die
-  std::cout << "place macro" << std::endl;
-  place_macro_on_die(DieSide::TOP, top_die_macros);
-  place_macro_on_die(DieSide::BOTTOM, bottom_die_macros);
-  std::cout << "done" << std::endl;
+  // std::cout << "place macro" << std::endl;
+  // place_macro_on_die(DieSide::TOP, top_die_macros);
+  // place_macro_on_die(DieSide::BOTTOM, bottom_die_macros);
+  // std::cout << "done" << std::endl;
 
   // get macros that are not placed
-  std::vector<std::string> top_not_placed_macros;
-  std::vector<std::string> bottom_not_placed_macros;
-  get_inst_that_not_placed(DieSide::TOP, top_die_macros, top_not_placed_macros);
-  get_inst_that_not_placed(DieSide::BOTTOM, bottom_die_macros,
-                           bottom_not_placed_macros);
+  // std::vector<std::string> top_not_placed_macros;
+  // std::vector<std::string> bottom_not_placed_macros;
+  // get_inst_that_not_placed(DieSide::TOP, top_die_macros, top_not_placed_macros);
+  // get_inst_that_not_placed(DieSide::BOTTOM, bottom_die_macros,
+  //                          bottom_not_placed_macros);
 
   // sort by (height / width)
-  if (!bottom_not_placed_macros.empty()) {
-    sort_macro(DieSide::TOP, bottom_not_placed_macros);
-  }
-  if (!top_not_placed_macros.empty()) {
-    sort_macro(DieSide::BOTTOM, top_not_placed_macros);
-  }
+  // if (!bottom_not_placed_macros.empty()) {
+  //   sort_macro(DieSide::TOP, bottom_not_placed_macros);
+  // }
+  // if (!top_not_placed_macros.empty()) {
+  //   sort_macro(DieSide::BOTTOM, top_not_placed_macros);
+  // }
 
   // place them on the other die
-  if (!bottom_not_placed_macros.empty()) {
-    place_macro_on_die(DieSide::TOP, bottom_not_placed_macros);
-  }
-  if (!top_not_placed_macros.empty()) {
-    place_macro_on_die(DieSide::BOTTOM, top_not_placed_macros);
-  }
+  // if (!bottom_not_placed_macros.empty()) {
+  //   place_macro_on_die(DieSide::TOP, bottom_not_placed_macros);
+  // }
+  // if (!top_not_placed_macros.empty()) {
+  //   place_macro_on_die(DieSide::BOTTOM, top_not_placed_macros);
+  // }
 
   if (check_macro_numbers(macro_C_index.size())) {
     std::cout << "macro number is correct" << std::endl;

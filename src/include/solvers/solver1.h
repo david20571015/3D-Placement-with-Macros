@@ -9,7 +9,6 @@ class Solver1 : public Solver {
     int to;
   };
   
-  Btree btree;
   std::vector<double> die_max_util;
   std::vector<double> die_util;
   std::vector<std::vector<LineSegment>> horizontal_contours;
