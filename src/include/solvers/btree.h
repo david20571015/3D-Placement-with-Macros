@@ -1,58 +1,60 @@
 #ifndef SRC_INCLUDE_SOLVERS_BTREE_H_
 #define SRC_INCLUDE_SOLVERS_BTREE_H_
 
+#include <algorithm>
+#include <array>
+#include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
-#include <map>
-#include<algorithm>
+
 const int maxn = 205;
+
 class Btree {
-    public:
-        int n, m, netnum;
-        int root;
-        long long best_area;
-        long long tot_area;
-        // int best_wire;
-        long long limx, limy;
-        long long Final_area;
-        // long long Final_area, Final_wire;
+ public:
+  int n, m, netnum;
+  int root;
+  int64_t broot;
+  int64_t best_area;
+  int64_t tot_area;
+  int64_t limx, limy;
+  int64_t final_area;
 
-        long long x[maxn] = {0}, rx[maxn] = {0}, y[maxn] = {0}, ry[maxn] = {0};
-        long long b[maxn] = {0}, p[maxn] = {0};
-        long long ls[maxn] = {0}, rs[maxn] = {0}, pa[maxn] = {0};
-        long long bpa[maxn] = {0}, bls[maxn] = {0}, brs[maxn] = {0};
-        long long bx[maxn] = {0}, brx[maxn] = {0}, by[maxn] = {0}, bry[maxn] = {0}, broot;
-        long long fx[maxn] = {0}, frx[maxn] = {0}, fy[maxn] = {0}, fry[maxn] = {0};
+  std::array<int64_t, maxn> x = {0}, rx = {0}, y = {0}, ry = {0};
+  std::array<int64_t, maxn> b = {0}, p = {0};
+  std::array<int64_t, maxn> ls = {0}, rs = {0}, pa = {0};
+  std::array<int64_t, maxn> bpa = {0}, bls = {0}, brs = {0};
+  std::array<int64_t, maxn> bx = {0}, brx = {0}, by = {0}, bry = {0};
+  std::array<int64_t, maxn> fx = {0}, frx = {0}, fy = {0}, fry = {0};
 
-        double T = 4000000000;
-        const double r = 0.85;
-        double best_cost;
-        double Final_cost;
-        double alpha=1;
+  double T = 4000000000;
+  const double r = 0.85;
+  double best_cost;
+  double final_cost;
+  double alpha = 1;
 
-        std::string block_name[maxn];
+  std::array<std::string, maxn> block_name;
 
-        std::pair<int, int> pr[maxn];
-        std::pair<int, int> bpr[maxn];
-        std::map<std::string, int> mp;
-        std::vector<std::vector<int>>net;
-        // functions
-        void place(int now, int pre);
-        void dfs(int now, int pre);
-        //void dfs2(int now, int pre);
-        //void print();
-        long long getarea(long long &x, long long &y);
-        long long getwire();
-        // tree
-        void init_tree();
-        void remove(int x);
-        void concat(int now, int pre);
-        void swap1(int n1, int n2);
-        void swap2(int n1, int n2);
-        // algo
-        bool upd();
-        void SA();
-        void update_final();
+  std::array<std::pair<int, int>, maxn> pr;
+  std::array<std::pair<int, int>, maxn> bpr;
+  std::map<std::string, int> mp;
+  std::vector<std::vector<int>> net;
+
+  void place(int now, int pre);
+  void dfs(int now, int pre);
+
+  int64_t getarea(int64_t &x, int64_t &y);
+  // int64_t getwire();
+
+  void init_tree();
+  void remove(int x);
+  void concat(int now, int pre);
+  void swap1(int n1, int n2);
+  void swap2(int n1, int n2);
+
+  bool upd();
+  void SA();
+  void update_final();
 };
 
 #endif

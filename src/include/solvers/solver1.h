@@ -1,4 +1,6 @@
+#include <cstdint>
 #include <utility>
+
 #include "btree.h"
 #include "solver.h"
 
@@ -8,12 +10,12 @@ class Solver1 : public Solver {
     int from;
     int to;
   };
-  
+
   std::vector<double> die_max_util;
   std::vector<double> die_util;
   std::vector<std::vector<LineSegment>> horizontal_contours;
   std::vector<std::vector<std::vector<std::pair<int, int>>>> spared_rows;
-  long long die_size;
+  int64_t die_size;
 
   using DieSide = Case::DieSide;
 
@@ -51,9 +53,12 @@ class Solver1 : public Solver {
 
   bool check_macro_numbers(size_t macro_numbers);
 
-  void Btree_place_macro(Btree &btree, DieSide side, std::vector<std::string> top_die_macros, int die_width, int die_height);
+  void Btree_place_macro(Btree& btree, DieSide side,
+                         std::vector<std::string> top_die_macros, int die_width,
+                         int die_height);
   bool check_cell_numbers(std::vector<std::string>& cell_C_index);
 
   void initialize_macro();
-  void place_macro_on_die_version2(DieSide side, const std::vector<std::string>& macros);
+  void place_macro_on_die_version2(DieSide side,
+                                   const std::vector<std::string>& macros);
 };
